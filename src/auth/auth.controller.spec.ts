@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { UserRole, AuthResponse, CreateUserDto } from './interfaces/auth.interface';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -15,16 +16,16 @@ describe('AuthController', () => {
   const mockUser = {
     id: 1,
     email: 'test@example.com',
-    role: 'client' as const,
+    role: UserRole.CLIENT,
   };
 
-  const mockAuthResponse = {
+  const mockAuthResponse: AuthResponse = {
     user: mockUser,
     token: 'test_token',
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleRef = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         {
@@ -34,8 +35,11 @@ describe('AuthController', () => {
       ],
     }).compile();
 
-    controller = module.get<AuthController>(AuthController);
-    authService = module.get<AuthService>(AuthService);
+    const app = moduleRef.createNestApplication();
+    await app.init();
+
+    controller = app.get(AuthController);
+    authService = app.get(AuthService);
   });
 
   it('should be defined', () => {
@@ -74,10 +78,10 @@ describe('AuthController', () => {
 
   describe('register', () => {
     it('should register a new user and return user with token', async () => {
-      const registerDto = {
+      const registerDto: CreateUserDto = {
         email: 'newuser@example.com',
         password: 'password123',
-        role: 'client' as const,
+        role: UserRole.CLIENT,
       };
 
       mockAuthService.register.mockResolvedValue(mockAuthResponse);
@@ -89,10 +93,10 @@ describe('AuthController', () => {
     });
 
     it('should throw error if registration fails', async () => {
-      const registerDto = {
+      const registerDto: CreateUserDto = {
         email: 'existing@example.com',
         password: 'password123',
-        role: 'client',
+        role: UserRole.CLIENT,
       };
 
       mockAuthService.register.mockRejectedValue(new Error('Email already exists'));

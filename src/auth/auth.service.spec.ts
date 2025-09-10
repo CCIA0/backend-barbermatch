@@ -1,13 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { Repository } from 'typeorm';
+import { UserRole, CreateUserDto } from './interfaces/auth.interface';
 import { AuthService } from './auth.service';
-import { CreateUserDto } from '../dto/create-user.dto';
 import { UserProfile } from '../entities/user-profile.entity';
-
-import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
+import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
@@ -30,6 +28,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let usersRepository: MockRepository<User>;
   let jwtService: JwtService;
+  let moduleRef: any;
 
   const mockProfile = new UserProfile();
   mockProfile.id = 1;
@@ -40,13 +39,13 @@ describe('AuthService', () => {
     id: 1,
     email: 'test@example.com',
     password: 'hashedpassword',
-    role: 'client',
+    role: UserRole.CLIENT,
     profile: mockProfile,
     appointments: [],
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       providers: [
         AuthService,
         {
@@ -62,9 +61,15 @@ describe('AuthService', () => {
       ],
     }).compile();
 
-    service = module.createNestApplication().get<AuthService>(AuthService);
-    usersRepository = module.createNestApplication().get<MockRepository>(getRepositoryToken(User));
-    jwtService = module.createNestApplication().get<JwtService>(JwtService);
+    const app = moduleRef.createNestApplication();
+    
+    service = moduleRef.get(AuthService);
+    usersRepository = moduleRef.get(getRepositoryToken(User));
+    jwtService = moduleRef.get(JwtService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -109,7 +114,7 @@ describe('AuthService', () => {
       const createUserDto: CreateUserDto = {
         email: 'new@example.com',
         password: password,
-        role: 'client'
+        role: UserRole.CLIENT
       };
 
       const userData = { ...createUserDto, password: hashedPassword };
@@ -128,7 +133,7 @@ describe('AuthService', () => {
       const createUserDto: CreateUserDto = {
         email: 'new@example.com',
         password: 'password',
-        role: 'client'
+        role: UserRole.CLIENT
       };
 
       usersRepository.findOne.mockResolvedValue(mockUser); // Simular usuario existente

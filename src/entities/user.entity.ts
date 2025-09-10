@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { UserProfile } from './user-profile.entity';
 import { Appointment } from './appointment.entity';
+import { UserRole } from '../auth/interfaces/auth.interface';
 
 @Entity()
 export class User {
@@ -19,8 +20,8 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ type: 'enum', enum: ['client', 'barber', 'admin'] })
-  role: 'client' | 'barber' | 'admin';
+  @Column({ type: 'enum', enum: UserRole })
+  role: UserRole;
 
   @OneToOne(() => UserProfile, (profile) => profile.user, { cascade: true })
   profile: UserProfile;

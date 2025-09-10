@@ -1,9 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { BarbershopsController } from './barbershops.controller';
 import { BarbershopsService } from './barbershops.service';
+import { CreateBarberDto } from '../dto/create-barber.dto';
 import { CreateBarbershopDto } from '../dto/create-barbershop.dto';
 
 describe('BarbershopsController', () => {
+  let nestApp;
   let controller: BarbershopsController;
   let barbershopsService: BarbershopsService;
 
@@ -31,8 +34,10 @@ describe('BarbershopsController', () => {
       ],
     }).compile();
 
-    controller = module.createNestApplication().get<BarbershopsController>(BarbershopsController);
-    barbershopsService = module.createNestApplication().get<BarbershopsService>(BarbershopsService);
+    nestApp = await module.createNestApplication();
+    controller = nestApp.get(BarbershopsController);
+    barbershopsService = nestApp.get(BarbershopsService);
+    await nestApp.init();
   });
 
   it('should be defined', () => {
@@ -53,6 +58,26 @@ describe('BarbershopsController', () => {
       expect(result).toEqual(mockBarbershop);
       expect(mockBarbershopsService.createBarbershop).toHaveBeenCalledWith(createBarbershopDto);
     });
+
+    it('should throw an error if barbershop creation fails', async () => {
+      const createBarbershopDto: CreateBarbershopDto = {
+        name: 'Test Barbershop',
+        address: '123 Test St',
+      };
+
+      mockBarbershopsService.createBarbershop.mockResolvedValue(null);
+
+      await expect(controller.createBarbershop(createBarbershopDto)).rejects.toThrow('Failed to create barbershop');
+    });
+
+    it('should throw BadRequestException for invalid data', async () => {
+      const invalidDto = {
+        name: '',  // Invalid: empty string
+        address: '',  // Invalid: empty string
+      };
+
+      await expect(controller.createBarbershop(invalidDto)).rejects.toThrow(BadRequestException);
+    });
   });
 
   describe('getBarbershops', () => {
@@ -68,15 +93,17 @@ describe('BarbershopsController', () => {
 
   describe('addBarber', () => {
     it('should add a barber to a barbershop', async () => {
-      const mockBarber = {
-        id: 1,
+      const mockBarber: CreateBarberDto = {
         name: 'Test Barber',
         specialties: ['classic cuts'],
       };
 
       const barbershopWithBarber = {
         ...mockBarbershop,
-        barbers: [mockBarber],
+        barbers: [{
+          id: 1,
+          ...mockBarber
+        }],
       };
 
       mockBarbershopsService.addBarber.mockResolvedValue(barbershopWithBarber);
@@ -88,8 +115,7 @@ describe('BarbershopsController', () => {
     });
 
     it('should throw NotFoundException if barbershop not found', async () => {
-      const mockBarber = {
-        id: 1,
+      const mockBarber: CreateBarberDto = {
         name: 'Test Barber',
         specialties: ['classic cuts'],
       };
