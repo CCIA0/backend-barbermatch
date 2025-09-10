@@ -6,17 +6,17 @@ export class BarbershopsController {
   constructor(private readonly barbershopsService: BarbershopsService) {}
 
   @Post()
-  async create(@Body() body: any) {
-    return this.barbershopsService.createBarbershop(body);
+  async createBarbershop(@Body() createBarbershopDto: any) {
+    return this.barbershopsService.createBarbershop(createBarbershopDto);
   }
 
   @Get()
-  async getAll() {
+  async getBarbershops() {
     return this.barbershopsService.getBarbershops();
   }
 
   @Post(':id/barbers')
-  async addBarber(@Param('id') id: number, @Body() body: any) {
-    return this.barbershopsService.addBarber(id, body);
+  async addBarber(@Param('id') id: number, @Body() barberData: any) {
+    return this.barbershopsService.addBarber(id, barberData);
   }
 }

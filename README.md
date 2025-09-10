@@ -256,6 +256,48 @@ Flujo de Notificaciones: Un servicio escucha eventos (ej: AppointmentCreatedEven
 
 10. **Usar DTOs para validación y documentación de la API**
 
+11. **Testing**
+    ```bash
+    # Ejecutar todos los tests
+    npm run test
+
+    # Ejecutar tests con coverage
+    npm run test:cov
+
+    # Ejecutar tests e2e
+    npm run test:e2e
+    ```
+
+    El proyecto mantiene un alto estándar de cobertura de pruebas:
+    - Tests unitarios para cada módulo
+    - Coverage objetivo: 100%
+    - Mínimo 100 tests unitarios
+    - Tests e2e para flujos críticos
+
+    Estructura de tests:
+    ```
+    src/
+      auth/
+        *.spec.ts       # Tests unitarios de auth
+      users/
+        *.spec.ts       # Tests unitarios de users
+      dto/
+        *.spec.ts       # Tests de validación de DTOs
+      visagism/
+        *.spec.ts       # Tests de análisis facial
+    test/
+      *.e2e-spec.ts    # Tests end-to-end
+    ```
+
+    Cada módulo incluye tests para:
+    - Controllers
+    - Services
+    - Guards
+    - DTOs
+    - Entities
+    - Pipes
+    - Filters
+
 ---
 
 > Sigue estos pasos para estructurar el backend y consulta este archivo como referencia para la lógica de negocio y endpoints.

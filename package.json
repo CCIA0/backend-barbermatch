@@ -27,6 +27,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.0",
+    "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
@@ -79,9 +80,32 @@
       "!**/*.spec.ts",
       "!**/*.module.ts",
       "!main.ts",
-      "!**/entities/*.ts"
+      "!**/entities/*.ts",
+      "!**/migrations/*.ts",
+      "!**/interfaces/*.ts",
+      "!**/*.mock.ts"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "json-summary"
+    ],
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@nestjs/jwt$": "<rootDir>/../node_modules/@nestjs/jwt",
+      "^bcrypt$": "<rootDir>/../node_modules/bcrypt",
+      "^src/(.*)$": "<rootDir>/$1"
+    },
+    "coverageThreshold": {
+      "global": {
+        "statements": 100,
+        "branches": 100,
+        "functions": 100,
+        "lines": 100
+      }
+    },
+    "verbose": true,
+    "testTimeout": 30000
   }
 }

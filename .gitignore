@@ -18,6 +18,12 @@ lerna-debug.log*
 # Tests
 /coverage
 /.nyc_output
+/test-results
+/jest-coverage
+*.spec.js.snap
+/coverage-e2e
+/coverage-unit
+.jest-test-results.json
 
 # IDEs and editors
 /.idea

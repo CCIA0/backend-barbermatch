@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 import { ValidationPipe } from '@nestjs/common';
@@ -8,26 +8,38 @@ export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
   @Post()
-  async create(@Body(new ValidationPipe()) body: CreateAppointmentDto) {
+  async create(@Body(new ValidationPipe()) createAppointmentDto: CreateAppointmentDto) {
     const appointmentData = {
-      ...body,
-      date: new Date(body.date),
+      ...createAppointmentDto,
+      date: new Date(createAppointmentDto.date),
     };
-    return this.appointmentsService.create(appointmentData);
+    const appointment = await this.appointmentsService.create(appointmentData);
+    if (!appointment) {
+      throw new Error('Failed to create appointment');
+    }
+    return appointment;
   }
 
   @Get()
-  async getAll() {
+  async findAll() {
     return this.appointmentsService.findAll();
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() body: any) {
-    return this.appointmentsService.update(id, body);
+  async update(@Param('id') id: number, @Body() updateAppointmentDto: Partial<CreateAppointmentDto>) {
+    const appointment = await this.appointmentsService.update(id, updateAppointmentDto);
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+    return appointment;
   }
 
-  @Put(':id/cancel')
+  @Delete(':id')
   async cancel(@Param('id') id: number) {
-    return this.appointmentsService.cancel(id);
+    const appointment = await this.appointmentsService.cancel(id);
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+    return appointment;
   }
 }

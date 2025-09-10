@@ -1,15 +1,26 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
+import { CreateUserDto } from '../dto/create-user.dto';
+import { UserProfile } from '../entities/user-profile.entity';
+
+import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
 
-type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
+  hash: jest.fn()
+}));
 
-const createMockRepository = <T = any>(): MockRepository<T> => ({
+type MockRepository<T = any> = {
+  findOne: jest.Mock;
+  create: jest.Mock;
+  save: jest.Mock;
+};
+
+const createMockRepository = (): MockRepository => ({
   findOne: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
@@ -20,12 +31,17 @@ describe('AuthService', () => {
   let usersRepository: MockRepository<User>;
   let jwtService: JwtService;
 
+  const mockProfile = new UserProfile();
+  mockProfile.id = 1;
+  mockProfile.name = 'Test User';
+  mockProfile.stylePreferences = 'casual';
+
   const mockUser: User = {
     id: 1,
     email: 'test@example.com',
     password: 'hashedpassword',
     role: 'client',
-    profile: null,
+    profile: mockProfile,
     appointments: [],
   };
 
@@ -46,9 +62,9 @@ describe('AuthService', () => {
       ],
     }).compile();
 
-    service = module.get<AuthService>(AuthService);
-    usersRepository = module.get(getRepositoryToken(User));
-    jwtService = module.get<JwtService>(JwtService);
+    service = module.createNestApplication().get<AuthService>(AuthService);
+    usersRepository = module.createNestApplication().get<MockRepository>(getRepositoryToken(User));
+    jwtService = module.createNestApplication().get<JwtService>(JwtService);
   });
 
   it('should be defined', () => {
@@ -58,12 +74,13 @@ describe('AuthService', () => {
   describe('validateUser', () => {
     it('should return user and token for valid credentials', async () => {
       usersRepository.findOne.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
+      const bcrypt = require('bcrypt');
+      bcrypt.compare.mockResolvedValue(true);
 
       const { password, ...userWithoutPassword } = mockUser;
       const result = await service.validateUser('test@example.com', 'password');
 
-      expect(result).toEqual({ user: userWithoutPassword, access_token: 'test_token' });
+      expect(result).toEqual({ user: userWithoutPassword, token: 'test_token' });
       expect(jwtService.sign).toHaveBeenCalledWith({ sub: 1, email: 'test@example.com', role: 'client' });
     });
 
@@ -89,16 +106,34 @@ describe('AuthService', () => {
       const hashedPassword = 'hashedpassword';
       jest.spyOn(bcrypt, 'hash').mockResolvedValue(hashedPassword as never);
 
-      const userData = { email: 'new@example.com', password: hashedPassword, role: 'client' };
+      const createUserDto: CreateUserDto = {
+        email: 'new@example.com',
+        password: password,
+        role: 'client'
+      };
+
+      const userData = { ...createUserDto, password: hashedPassword };
       usersRepository.create.mockReturnValue(userData as any);
       usersRepository.save.mockResolvedValue({ id: 2, ...userData } as any);
 
-      const result = await service.register('new@example.com', password, 'client');
+      const result = await service.register(createUserDto);
 
       expect(bcrypt.hash).toHaveBeenCalledWith(password, 10);
       expect(usersRepository.create).toHaveBeenCalledWith(userData);
       expect(usersRepository.save).toHaveBeenCalledWith(userData);
-      expect(result).toHaveProperty('id', 2);
+      expect(result.user).toHaveProperty('id', 2);
+    });
+
+    it('should throw error if registration fails', async () => {
+      const createUserDto: CreateUserDto = {
+        email: 'new@example.com',
+        password: 'password',
+        role: 'client'
+      };
+
+      usersRepository.findOne.mockResolvedValue(mockUser); // Simular usuario existente
+
+      await expect(service.register(createUserDto)).rejects.toThrow();
     });
   });
 });

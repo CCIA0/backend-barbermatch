@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Put, Body } from '@nestjs/common';
+import { Controller, Get, Param, Put, Body, NotFoundException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { ValidationPipe } from '@nestjs/common';
@@ -9,12 +9,20 @@ export class UsersController {
 
   @Get('me/:id')
   async getMe(@Param('id') id: number) {
-    return this.usersService.findMe(id);
+    const user = await this.usersService.findMe(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
   @Get(':id')
   async getById(@Param('id') id: number) {
-    return this.usersService.findById(id);
+    const user = await this.usersService.findById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
   @Put('profile/:id')
@@ -22,6 +30,10 @@ export class UsersController {
     @Param('id') id: number,
     @Body(new ValidationPipe()) body: UpdateProfileDto,
   ) {
-    return this.usersService.updateProfile(id, body);
+    const profile = await this.usersService.updateProfile(id, body);
+    if (!profile) {
+      throw new NotFoundException('Profile not found');
+    }
+    return profile;
   }
 }

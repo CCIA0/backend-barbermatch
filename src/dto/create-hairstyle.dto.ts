@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsUrl } from 'class-validator';
 
 export class CreateHairstyleDto {
   @IsString()
@@ -9,6 +9,7 @@ export class CreateHairstyleDto {
   description?: string;
 
   @IsString()
+  @IsUrl()
   @IsOptional()
   imageUrl?: string;
 

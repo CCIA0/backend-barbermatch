@@ -6,17 +6,17 @@ export class HairstylesController {
   constructor(private readonly hairstylesService: HairstylesService) {}
 
   @Post()
-  async create(@Body() body: any) {
-    return this.hairstylesService.create(body);
+  async create(@Body() createHairstyleDto: any) {
+    return this.hairstylesService.create(createHairstyleDto);
   }
 
   @Get()
-  async getAll() {
+  async findAll() {
     return this.hairstylesService.findAll();
   }
 
   @Get('filter')
-  async filterByFaceShape(@Query('faceShape') faceShape: string) {
+  async findByFaceShape(@Query('faceShape') faceShape: string) {
     return this.hairstylesService.findByFaceShape(faceShape);
   }
 }

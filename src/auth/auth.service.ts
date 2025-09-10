@@ -17,25 +17,31 @@ export class AuthService {
     const user = await this.usersRepository.findOne({ where: { email } });
     if (user && (await bcrypt.compare(pass, user.password))) {
       const { password, ...result } = user;
-      // Generar JWT
       const payload = { sub: user.id, email: user.email, role: user.role };
       const token = this.jwtService.sign(payload);
-      return { user: result, access_token: token };
+      return { user: result, token };
     }
     return null;
   }
 
-  async register(
-    email: string,
-    password: string,
-    role: 'client' | 'barber' | 'admin',
-  ): Promise<User> {
-    const hashedPassword = await bcrypt.hash(password, 10);
+  async register(createUserDto: { email: string; password: string; role: 'client' | 'barber' | 'admin' }): Promise<any> {
+    // Verificar si el email ya existe
+    const existingUser = await this.usersRepository.findOne({ where: { email: createUserDto.email } });
+    if (existingUser) {
+      throw new Error('Email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const user = this.usersRepository.create({
-      email,
+      email: createUserDto.email,
       password: hashedPassword,
-      role: role,
+      role: createUserDto.role,
     });
-    return this.usersRepository.save(user);
+    const savedUser = await this.usersRepository.save(user);
+    
+    const { password, ...result } = savedUser;
+    const payload = { sub: savedUser.id, email: savedUser.email, role: savedUser.role };
+    const token = this.jwtService.sign(payload);
+    return { user: result, token };
   }
 }
