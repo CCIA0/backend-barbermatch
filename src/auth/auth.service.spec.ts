@@ -103,6 +103,13 @@ describe('AuthService', () => {
       const result = await service.validateUser('nouser@example.com', 'password');
       expect(result).toBeNull();
     });
+
+    it('should throw InternalServerErrorException when validation fails', async () => {
+      usersRepository.findOne.mockRejectedValue(new Error('Database error'));
+      await expect(service.validateUser('test@example.com', 'password'))
+        .rejects
+        .toThrow('Error validating user');
+    });
   });
 
   describe('register', () => {
@@ -129,7 +136,7 @@ describe('AuthService', () => {
       expect(result.user).toHaveProperty('id', 2);
     });
 
-    it('should throw error if registration fails', async () => {
+    it('should throw ConflictException if email exists', async () => {
       const createUserDto: CreateUserDto = {
         email: 'new@example.com',
         password: 'password',
@@ -138,7 +145,23 @@ describe('AuthService', () => {
 
       usersRepository.findOne.mockResolvedValue(mockUser); // Simular usuario existente
 
-      await expect(service.register(createUserDto)).rejects.toThrow();
+      await expect(service.register(createUserDto))
+        .rejects
+        .toThrow('Email already exists');
+    });
+
+    it('should throw InternalServerErrorException on database error', async () => {
+      const createUserDto: CreateUserDto = {
+        email: 'new@example.com',
+        password: 'password',
+        role: UserRole.CLIENT
+      };
+
+      usersRepository.findOne.mockRejectedValue(new Error('Database error'));
+
+      await expect(service.register(createUserDto))
+        .rejects
+        .toThrow('Error registering user');
     });
   });
 });
