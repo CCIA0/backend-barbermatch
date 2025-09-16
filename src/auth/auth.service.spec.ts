@@ -61,7 +61,6 @@ describe('AuthService', () => {
       ],
     }).compile();
 
-    const app = moduleRef.createNestApplication();
     
     service = moduleRef.get(AuthService);
     usersRepository = moduleRef.get(getRepositoryToken(User));

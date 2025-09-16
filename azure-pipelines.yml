@@ -1,9 +1,8 @@
-# Azure DevOps Pipeline for DocuLaw Backend - QUALITY FOCUSED VERSION
-# This pipeline runs comprehensive quality checks without SonarQube or deployment
 
 trigger:
 - main
 - develop
+- master
 
 variables:
   buildConfiguration: 'Release'
@@ -20,44 +19,37 @@ steps:
   displayName: '🟢 Install Node.js $(nodeVersion)'
 
 - script: npm ci
-  workingDirectory: 'backend'
   displayName: '📦 Install Dependencies'
 
 - script: npm run format
-  workingDirectory: 'backend'
   displayName: '🎨 Format Code (Prettier)'
   continueOnError: true
 
 - script: npm run lint
-  workingDirectory: 'backend'
   displayName: '🔍 Lint Code (ESLint)'
   continueOnError: false
 
 - script: npm run test:unit
-  workingDirectory: 'backend'
   displayName: '🧪 Run Unit Tests'
 
 - script: npm run test:cov:ci
-  workingDirectory: 'backend'
   displayName: '📊 Run Tests with Coverage'
   env:
     JEST_JUNIT_OUTPUT_DIR: 'coverage'
     JEST_JUNIT_OUTPUT_NAME: 'junit.xml'
 
 - script: npm run build
-  workingDirectory: 'backend'
   displayName: '🏗️ Build Application'
 
 - script: npm run test:e2e
-  workingDirectory: 'backend'
   displayName: '🔄 Run E2E Tests'
   continueOnError: true
 
 - task: PublishCodeCoverageResults@2
   condition: succeededOrFailed()
   inputs:
-    summaryFileLocation: 'backend/coverage/cobertura-coverage.xml'
-    pathToSources: 'backend/src'
+    summaryFileLocation: 'coverage/cobertura-coverage.xml'
+    pathToSources: 'src'
     failIfCoverageEmpty: false
   displayName: '📈 Publish Coverage Results'
 
@@ -65,7 +57,7 @@ steps:
   condition: succeededOrFailed()
   inputs:
     testRunner: 'JUnit'
-    testResultsFiles: 'backend/coverage/junit.xml'
+    testResultsFiles: 'coverage/junit.xml'
     mergeTestResults: true
     failTaskOnFailedTests: false
   displayName: '📋 Publish Test Results'
