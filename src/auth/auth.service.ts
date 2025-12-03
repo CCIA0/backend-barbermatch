@@ -1,6 +1,5 @@
 import {
   Injectable,
-  UnauthorizedException,
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -30,7 +29,8 @@ export class AuthService {
     try {
       const user = await this.usersRepository.findOne({ where: { email } });
       if (user && (await bcrypt.compare(pass, user.password))) {
-        const { password, ...result } = user;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password: _password, ...result } = user;
         const payload: JwtPayload = {
           sub: user.id,
           email: user.email,
@@ -63,7 +63,8 @@ export class AuthService {
       });
       const savedUser = await this.usersRepository.save(user);
 
-      const { password, ...result } = savedUser;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _password, ...result } = savedUser;
       const payload: JwtPayload = {
         sub: savedUser.id,
         email: savedUser.email,

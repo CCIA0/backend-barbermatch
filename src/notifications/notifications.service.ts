@@ -5,6 +5,7 @@ export class NotificationsService {
   async sendNotification(userId: number, message: string): Promise<boolean> {
     // Aquí iría la integración con OneSignal
     // Simulación de envío
+    // eslint-disable-next-line no-console
     console.log(`Notificación enviada a usuario ${userId}: ${message}`);
     return true;
   }

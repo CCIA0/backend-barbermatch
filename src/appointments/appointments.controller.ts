@@ -58,6 +58,7 @@ export class AppointmentsController {
     @Body(ValidationPipe) updateAppointmentDto: Partial<CreateAppointmentDto>,
   ) {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: any = { ...updateAppointmentDto };
 
       if (updateAppointmentDto.date) {

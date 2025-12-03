@@ -1,11 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Test, TestingModule } from '@nestjs/testing';
 import { VisagismController } from './visagism.controller';
 import { VisagismService } from './visagism.service';
-import { BadRequestException } from '@nestjs/common';
 
 describe('VisagismController', () => {
   let controller: VisagismController;
-  let visagismService: VisagismService;
 
   const mockVisagismService = {
     analyzeImage: jest.fn(),
@@ -35,7 +34,6 @@ describe('VisagismController', () => {
     }).compile();
 
     controller = module.get<VisagismController>(VisagismController);
-    visagismService = module.get<VisagismService>(VisagismService);
   });
 
   it('should be defined', () => {

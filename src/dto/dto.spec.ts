@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { plainToClass } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CreateUserDto } from './create-user.dto';

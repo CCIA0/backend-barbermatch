@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -10,7 +10,6 @@ import {
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: AuthService;
 
   const mockAuthService = {
     validateUser: jest.fn(),
@@ -43,7 +42,6 @@ describe('AuthController', () => {
     await app.init();
 
     controller = app.get(AuthController);
-    authService = app.get(AuthService);
   });
 
   it('should be defined', () => {

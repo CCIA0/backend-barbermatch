@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
 import { BarbershopsController } from './barbershops.controller';
 import { BarbershopsService } from './barbershops.service';
 import { CreateBarberDto } from '../dto/create-barber.dto';
@@ -8,7 +7,6 @@ import { CreateBarbershopDto } from '../dto/create-barbershop.dto';
 describe('BarbershopsController', () => {
   let nestApp;
   let controller: BarbershopsController;
-  let barbershopsService: BarbershopsService;
 
   const mockBarbershopsService = {
     createBarbershop: jest.fn(),
@@ -36,7 +34,6 @@ describe('BarbershopsController', () => {
 
     nestApp = await module.createNestApplication();
     controller = nestApp.get(BarbershopsController);
-    barbershopsService = nestApp.get(BarbershopsService);
     await nestApp.init();
   });
 

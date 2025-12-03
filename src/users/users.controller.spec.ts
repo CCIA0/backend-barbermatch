@@ -4,7 +4,6 @@ import { UsersService } from './users.service';
 
 describe('UsersController', () => {
   let controller: UsersController;
-  let usersService: UsersService;
 
   const mockUsersService = {
     findMe: jest.fn(),
@@ -35,7 +34,6 @@ describe('UsersController', () => {
     }).compile();
 
     controller = module.get<UsersController>(UsersController);
-    usersService = module.get<UsersService>(UsersService);
   });
 
   it('should be defined', () => {

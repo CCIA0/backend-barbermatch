@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 declare module '@nestjs/common' {
   export class ValidationPipe {}
   export class ParseIntPipe {}

@@ -5,7 +5,6 @@ import { CreateHairstyleDto } from '../dto/create-hairstyle.dto';
 
 describe('HairstylesController', () => {
   let controller: HairstylesController;
-  let hairstylesService: HairstylesService;
 
   const mockHairstylesService = {
     create: jest.fn(),
@@ -32,12 +31,7 @@ describe('HairstylesController', () => {
       ],
     }).compile();
 
-    controller = module
-      .createNestApplication()
-      .get<HairstylesController>(HairstylesController);
-    hairstylesService = module
-      .createNestApplication()
-      .get<HairstylesService>(HairstylesService);
+    controller = module.get<HairstylesController>(HairstylesController);
   });
 
   it('should be defined', () => {
