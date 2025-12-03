@@ -26,7 +26,7 @@ variables:
   # --- CONEXIÓN CON SONARCLOUD ---
   sonarCloudServiceConnection: 'SonarQube-Back'
   sonarCloudOrganization: 'iduertom'
-  sonarCloudProjectKey: 'BarberMatch-backend' # <--- ¡CORREGIDO!
+  sonarCloudProjectKey: 'iduertom_backend' # <--- ¡CORREGIDO!
   
   # --- CONEXIÓN CON AZURE ---
   azureSubscription: 'AzureServiceConnection'
