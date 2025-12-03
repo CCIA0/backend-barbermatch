@@ -89,25 +89,34 @@ stages:
       displayName: '🔧 Install Node.js $(nodeVersion) for Sonar'
       inputs:
         versionSpec: $(nodeVersion)
+    
+    # Reinstalar dependencias y regenerar cobertura para SonarCloud
+    - script: |
+        npm ci
+        npm run test:cov
+      displayName: '📊 Regenerate Coverage for SonarCloud'
         
-    - task: SonarCloudPrepare@3
+    - task: SonarCloudPrepare@2
       displayName: '🔧 Prepare SonarCloud'
       inputs:
         SonarCloud: '$(sonarCloudServiceConnection)'
         organization: '$(sonarCloudOrganization)'
-        projectKey: '$(sonarCloudProjectKey)'
-        projectName: 'BarberMatch Backend API'
-        # Incluye la ruta del reporte de cobertura (lcov.info)
+        scannerMode: 'CLI'
+        configMode: 'manual'
+        cliProjectKey: '$(sonarCloudProjectKey)'
+        cliProjectName: 'BarberMatch Backend API'
+        cliSources: 'src'
         extraProperties: |
           sonar.javascript.lcov.reportPaths=coverage/lcov.info
-          sonar.exclusions=**/*.spec.ts, **/*.test.ts, **/*module.ts
+          sonar.exclusions=**/*.spec.ts,**/*.test.ts,**/node_modules/**,**/dist/**
+          sonar.typescript.node=/usr/bin/node
           
-    - task: SonarCloudAnalyze@3
+    - task: SonarCloudAnalyze@2
       displayName: '🔍 Run Code Analysis'
     
     # [Rúbrica] Usar Quality Gate para fallar[cite: 99].
     # Solución para Plan Gratuito: Permite avanzar a pesar del "Not computed".
-    - task: SonarCloudPublish@3
+    - task: SonarCloudPublish@2
       displayName: '📊 Publish Quality Gate Results'
       inputs:
         pollingTimeoutSec: '300' 
