@@ -31,7 +31,7 @@ variables:
   # --- CONEXIÓN CON AZURE ---
   azureSubscription: 'AzureServiceConnection'
   resourceGroupName: 'barbermatch-rg'
-  webAppName: 'barbermatch-backend-api-$(Build.BuildId)' 
+  webAppName: 'barbermatch-backend-api-$(Build.BuildId)'
   # URL para JMeter (asume el formato estándar de Azure Web App)
   deployedUrl: 'https://barbermatch-backend-api-$(Build.BuildId).azurewebsites.net'
 
