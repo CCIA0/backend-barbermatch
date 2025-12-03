@@ -27,4 +27,3 @@ databases:
     user: barbermatch_user
     region: oregon
     plan: free
-    postgresMajorVersion: 16
