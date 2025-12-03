@@ -56,7 +56,9 @@ describe('BarbershopsController', () => {
       const result = await controller.createBarbershop(createBarbershopDto);
 
       expect(result).toEqual(mockBarbershop);
-      expect(mockBarbershopsService.createBarbershop).toHaveBeenCalledWith(createBarbershopDto);
+      expect(mockBarbershopsService.createBarbershop).toHaveBeenCalledWith(
+        createBarbershopDto,
+      );
     });
 
     it('should throw an error if barbershop creation fails', async () => {
@@ -67,16 +69,20 @@ describe('BarbershopsController', () => {
 
       mockBarbershopsService.createBarbershop.mockResolvedValue(null);
 
-      await expect(controller.createBarbershop(createBarbershopDto)).rejects.toThrow('Failed to create barbershop');
+      await expect(
+        controller.createBarbershop(createBarbershopDto),
+      ).rejects.toThrow('Failed to create barbershop');
     });
 
     it('should throw BadRequestException for invalid data', async () => {
       const invalidDto = {
-        name: '',  // Invalid: empty string
-        address: '',  // Invalid: empty string
+        name: '', // Invalid: empty string
+        address: '', // Invalid: empty string
       };
 
-      await expect(controller.createBarbershop(invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(controller.createBarbershop(invalidDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -100,10 +106,12 @@ describe('BarbershopsController', () => {
 
       const barbershopWithBarber = {
         ...mockBarbershop,
-        barbers: [{
-          id: 1,
-          ...mockBarber
-        }],
+        barbers: [
+          {
+            id: 1,
+            ...mockBarber,
+          },
+        ],
       };
 
       mockBarbershopsService.addBarber.mockResolvedValue(barbershopWithBarber);
@@ -111,7 +119,10 @@ describe('BarbershopsController', () => {
       const result = await controller.addBarber(1, mockBarber);
 
       expect(result).toEqual(barbershopWithBarber);
-      expect(mockBarbershopsService.addBarber).toHaveBeenCalledWith(1, mockBarber);
+      expect(mockBarbershopsService.addBarber).toHaveBeenCalledWith(
+        1,
+        mockBarber,
+      );
     });
 
     it('should throw NotFoundException if barbershop not found', async () => {
@@ -120,9 +131,13 @@ describe('BarbershopsController', () => {
         specialties: ['classic cuts'],
       };
 
-      mockBarbershopsService.addBarber.mockRejectedValue(new Error('Barbershop not found'));
+      mockBarbershopsService.addBarber.mockRejectedValue(
+        new Error('Barbershop not found'),
+      );
 
-      await expect(controller.addBarber(1, mockBarber)).rejects.toThrow('Barbershop not found');
+      await expect(controller.addBarber(1, mockBarber)).rejects.toThrow(
+        'Barbershop not found',
+      );
     });
   });
 });

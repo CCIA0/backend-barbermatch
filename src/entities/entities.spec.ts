@@ -1,4 +1,3 @@
-
 import { Appointment } from './appointment.entity';
 import { Barber } from './barber.entity';
 import { Barbershop } from './barbershop.entity';

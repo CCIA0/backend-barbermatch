@@ -2,5 +2,6 @@
     "sonarlint.connectedMode.project": {
         "connectionId": "SonarQube-Conection",
         "projectKey": "iduertom_BarberMatch-backend"
-    }
+    },
+    "typescript.tsdk": "node_modules\\typescript\\lib"
 }

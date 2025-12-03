@@ -5,7 +5,6 @@ import { CreateAppointmentDto } from '../dto/create-appointment.dto';
 
 describe('AppointmentsController', () => {
   let controller: AppointmentsController;
-  let appointmentsService: AppointmentsService;
 
   const mockAppointmentsService = {
     create: jest.fn(),
@@ -39,8 +38,9 @@ describe('AppointmentsController', () => {
       ],
     }).compile();
 
-    controller = module.createNestApplication().get<AppointmentsController>(AppointmentsController);
-    appointmentsService = module.createNestApplication().get<AppointmentsService>(AppointmentsService);
+    controller = module
+      .createNestApplication()
+      .get<AppointmentsController>(AppointmentsController);
   });
 
   it('should be defined', () => {
@@ -58,7 +58,7 @@ describe('AppointmentsController', () => {
         barbershopId: 1,
       };
 
-      mockAppointmentsService.create.mockImplementation(dto => ({
+      mockAppointmentsService.create.mockImplementation((dto) => ({
         ...mockAppointment,
         date: new Date(dto.date),
       }));
@@ -88,7 +88,9 @@ describe('AppointmentsController', () => {
 
       mockAppointmentsService.create.mockResolvedValue(null);
 
-      await expect(controller.create(createAppointmentDto)).rejects.toThrow('Failed to create appointment');
+      await expect(controller.create(createAppointmentDto)).rejects.toThrow(
+        'Failed to create appointment',
+      );
     });
 
     it('should throw an error if appointment creation fails with exception', async () => {
@@ -100,9 +102,13 @@ describe('AppointmentsController', () => {
         barbershopId: 1,
       };
 
-      mockAppointmentsService.create.mockRejectedValue(new Error('Failed to create appointment'));
+      mockAppointmentsService.create.mockRejectedValue(
+        new Error('Failed to create appointment'),
+      );
 
-      await expect(controller.create(createAppointmentDto)).rejects.toThrow('Failed to create appointment');
+      await expect(controller.create(createAppointmentDto)).rejects.toThrow(
+        'Failed to create appointment',
+      );
     });
 
     it('should throw an error if date is invalid', async () => {
@@ -131,23 +137,35 @@ describe('AppointmentsController', () => {
 
   describe('update', () => {
     it('should update and return the appointment', async () => {
-      const updateAppointmentDto = { status: 'confirmed' as 'pending' | 'confirmed' | 'cancelled' };
-      const updatedAppointment = { ...mockAppointment, ...updateAppointmentDto };
+      const updateAppointmentDto = {
+        status: 'confirmed' as 'pending' | 'confirmed' | 'cancelled',
+      };
+      const updatedAppointment = {
+        ...mockAppointment,
+        ...updateAppointmentDto,
+      };
 
       mockAppointmentsService.update.mockResolvedValue(updatedAppointment);
 
       const result = await controller.update(1, updateAppointmentDto);
 
       expect(result).toEqual(updatedAppointment);
-      expect(mockAppointmentsService.update).toHaveBeenCalledWith(1, updateAppointmentDto);
+      expect(mockAppointmentsService.update).toHaveBeenCalledWith(
+        1,
+        updateAppointmentDto,
+      );
     });
 
     it('should throw NotFoundException if appointment not found', async () => {
-      const updateAppointmentDto = { status: 'confirmed' as 'pending' | 'confirmed' | 'cancelled' };
+      const updateAppointmentDto = {
+        status: 'confirmed' as 'pending' | 'confirmed' | 'cancelled',
+      };
 
       mockAppointmentsService.update.mockResolvedValue(null);
 
-      await expect(controller.update(1, updateAppointmentDto)).rejects.toThrow('Appointment not found');
+      await expect(controller.update(1, updateAppointmentDto)).rejects.toThrow(
+        'Appointment not found',
+      );
     });
   });
 
@@ -166,7 +184,9 @@ describe('AppointmentsController', () => {
     it('should throw NotFoundException if appointment not found', async () => {
       mockAppointmentsService.cancel.mockResolvedValue(null);
 
-      await expect(controller.cancel(1)).rejects.toThrow('Appointment not found');
+      await expect(controller.cancel(1)).rejects.toThrow(
+        'Appointment not found',
+      );
     });
   });
 });

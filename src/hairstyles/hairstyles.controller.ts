@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Query, ValidationPipe, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  ValidationPipe,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { HairstylesService } from './hairstyles.service';
 import { CreateHairstyleDto } from '../dto/create-hairstyle.dto';
 

@@ -86,9 +86,9 @@ describe('Roles Decorator', () => {
     const roles = ['admin', 'barber'];
     const target = {};
     const decorator = Roles(...roles);
-    
+
     decorator(target);
-    
+
     const metadata = Reflect.getMetadata('roles', target);
     expect(metadata).toEqual(roles);
   });

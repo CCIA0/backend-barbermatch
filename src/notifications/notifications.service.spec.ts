@@ -1,4 +1,3 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationsService } from './notifications.service';
 
@@ -19,10 +18,14 @@ describe('NotificationsService', () => {
 
   describe('sendNotification', () => {
     it('should log a notification message and return true', async () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleSpy = jest
+        .spyOn(console, 'log')
+        .mockImplementation(() => {});
       const result = await service.sendNotification(1, 'Test message');
 
-      expect(consoleSpy).toHaveBeenCalledWith('Notificación enviada a usuario 1: Test message');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Notificación enviada a usuario 1: Test message',
+      );
       expect(result).toBe(true);
 
       consoleSpy.mockRestore();
@@ -31,10 +34,15 @@ describe('NotificationsService', () => {
 
   describe('sendAppointmentReminder', () => {
     it('should call sendNotification with the correct reminder message', async () => {
-      const sendNotificationSpy = jest.spyOn(service, 'sendNotification').mockResolvedValue(true);
+      const sendNotificationSpy = jest
+        .spyOn(service, 'sendNotification')
+        .mockResolvedValue(true);
       const result = await service.sendAppointmentReminder(1, 123);
 
-      expect(sendNotificationSpy).toHaveBeenCalledWith(1, 'Recordatorio de cita #123');
+      expect(sendNotificationSpy).toHaveBeenCalledWith(
+        1,
+        'Recordatorio de cita #123',
+      );
       expect(result).toBe(true);
 
       sendNotificationSpy.mockRestore();

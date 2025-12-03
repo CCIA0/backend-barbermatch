@@ -103,7 +103,9 @@ describe('UsersController', () => {
 
       mockUsersService.updateProfile.mockResolvedValue(null);
 
-      await expect(controller.updateProfile(1, updateDto)).rejects.toThrow('Profile not found');
+      await expect(controller.updateProfile(1, updateDto)).rejects.toThrow(
+        'Profile not found',
+      );
     });
   });
 });

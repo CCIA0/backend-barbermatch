@@ -1,7 +1,14 @@
-import { Controller, Get, Param, Put, Body, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Put,
+  Body,
+  NotFoundException,
+  ValidationPipe 
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
-import { ValidationPipe } from '@nestjs/common';
 
 @Controller('users')
 export class UsersController {

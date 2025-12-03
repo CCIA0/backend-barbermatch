@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { UserRole, AuthResponse, CreateUserDto } from './interfaces/auth.interface';
+import {
+  UserRole,
+  AuthResponse,
+  CreateUserDto,
+} from './interfaces/auth.interface';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -72,7 +76,9 @@ describe('AuthController', () => {
 
       mockAuthService.validateUser.mockResolvedValue(null);
 
-      await expect(controller.login(loginDto)).rejects.toThrow(UnauthorizedException);
+      await expect(controller.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -99,9 +105,13 @@ describe('AuthController', () => {
         role: UserRole.CLIENT,
       };
 
-      mockAuthService.register.mockRejectedValue(new Error('Email already exists'));
+      mockAuthService.register.mockRejectedValue(
+        new Error('Email already exists'),
+      );
 
-      await expect(controller.register(registerDto)).rejects.toThrow('Email already exists');
+      await expect(controller.register(registerDto)).rejects.toThrow(
+        'Email already exists',
+      );
     });
   });
 });

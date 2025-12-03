@@ -1,4 +1,3 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -69,7 +68,9 @@ describe('AppointmentsService', () => {
 
       const result = await service.create(appointmentData);
 
-      expect(appointmentRepository.create).toHaveBeenCalledWith(appointmentData);
+      expect(appointmentRepository.create).toHaveBeenCalledWith(
+        appointmentData,
+      );
       expect(appointmentRepository.save).toHaveBeenCalledWith(appointmentData);
       expect(result).toEqual(mockAppointment);
     });
@@ -99,8 +100,12 @@ describe('AppointmentsService', () => {
 
       const result = await service.update(1, updatedData);
 
-      expect(appointmentRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-      expect(appointmentRepository.save).toHaveBeenCalledWith(expect.objectContaining(updatedData));
+      expect(appointmentRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+      expect(appointmentRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining(updatedData),
+      );
       expect(result).toEqual(updatedAppointment);
     });
 
@@ -114,7 +119,9 @@ describe('AppointmentsService', () => {
   describe('cancel', () => {
     it('should cancel an appointment', async () => {
       const cancelledAppointment = { ...mockAppointment, status: 'cancelled' };
-      const updateSpy = jest.spyOn(service, 'update').mockResolvedValue(cancelledAppointment);
+      const updateSpy = jest
+        .spyOn(service, 'update')
+        .mockResolvedValue(cancelledAppointment);
 
       const result = await service.cancel(1);
 

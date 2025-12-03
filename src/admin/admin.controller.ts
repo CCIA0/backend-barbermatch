@@ -1,4 +1,11 @@
-import { Controller, Get, Delete, Param, Query, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Delete,
+  Param,
+  Query,
+  NotFoundException,
+} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { BarbershopsService } from '../barbershops/barbershops.service';
 import { AppointmentsService } from '../appointments/appointments.service';

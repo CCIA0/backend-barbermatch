@@ -13,6 +13,12 @@ declare module '@nestjs/common' {
   export function Put(path?: string): MethodDecorator;
   export function Delete(path?: string): MethodDecorator;
   export function Body(pipe?: ValidationPipe): ParameterDecorator;
-  export function Param(param?: string, pipe?: ValidationPipe): ParameterDecorator;
-  export function Query(param?: string, pipe?: ValidationPipe): ParameterDecorator;
+  export function Param(
+    param?: string,
+    pipe?: ValidationPipe,
+  ): ParameterDecorator;
+  export function Query(
+    param?: string,
+    pipe?: ValidationPipe,
+  ): ParameterDecorator;
 }

@@ -66,7 +66,7 @@ describe('DTOs', () => {
         status: 'pending',
         userId: 1,
         barberId: 1,
-        barbershopId: 1
+        barbershopId: 1,
       });
 
       const errors = await validate(dto);
@@ -79,7 +79,7 @@ describe('DTOs', () => {
         status: 'pending',
         userId: 1,
         barberId: 1,
-        barbershopId: 1
+        barbershopId: 1,
       });
 
       const errors = await validate(dto);
@@ -104,7 +104,7 @@ describe('DTOs', () => {
       const dto = plainToClass(CreateHairstyleDto, {
         description: 'A timeless style',
         imageUrl: 'https://example.com/image.jpg',
-        recommendedFaceShapes: ['oval', 'round']
+        recommendedFaceShapes: ['oval', 'round'],
       });
 
       const errors = await validate(dto);
@@ -117,7 +117,7 @@ describe('DTOs', () => {
         name: 'Classic Cut',
         description: 'A timeless style',
         imageUrl: 'not-a-url',
-        recommendedFaceShapes: ['oval', 'round']
+        recommendedFaceShapes: ['oval', 'round'],
       });
 
       const errors = await validate(dto);

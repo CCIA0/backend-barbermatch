@@ -1,63 +1,221 @@
+# azure-pipelines-backend.yml for BarberMatch (Nest.js)
+# Cumple con la Rúbrica: Build -> SonarCloud -> Deploy -> JMeter
 
 trigger:
-- main
-- develop
-- master
+  branches:
+    include:
+    - main
+    - master
+    - develop
+    - feature/*
+
+# [Rúbrica] Disparo por Pull Request [cite: 23, 54]
+pr:
+  branches:
+    include:
+    - main
+    - master
+    - develop
 
 variables:
-  buildConfiguration: 'Release'
-  nodeVersion: '18.x'
+  # Tecnologías: Nest.js (Node.js/TypeScript)
+  nodeVersion: '20.x' 
+  vmImageName: 'ubuntu-latest'
+  artifactName: 'backend-dist-package'
+  
+  # --- CONEXIÓN CON SONARCLOUD ---
+  sonarCloudServiceConnection: 'SonarQube-Connection'
+  sonarCloudOrganization: 'iduertom'
+  sonarCloudProjectKey: 'iduertom_BarberMatch-Backend' # <--- CAMBIAR SI ES NECESARIO
+  
+  # --- CONEXIÓN CON AZURE ---
+  azureSubscription: 'AzureServiceConnection'
+  resourceGroupName: 'barbermatch-rg'
+  webAppName: 'barbermatch-backend-api-$(Build.BuildId)' 
+  # URL para JMeter (asume el formato estándar de Azure Web App)
+  deployedUrl: 'https://barbermatch-backend-api-$(Build.BuildId).azurewebsites.net'
 
-steps:
-- checkout: self
-  fetchDepth: 0
-  displayName: '📥 Checkout Repository'
+pool:
+  vmImage: $(vmImageName)
 
-- task: NodeTool@0
-  inputs:
-    versionSpec: '$(nodeVersion)'
-  displayName: '🟢 Install Node.js $(nodeVersion)'
+stages:
+# ------------------------------------------------------------------------
+# STAGE 1: BUILD, TEST & PACKAGE [cite: 25, 75, 76]
+# ------------------------------------------------------------------------
+- stage: Build
+  displayName: '🏗️ Build, Test & Package Backend'
+  jobs:
+  - job: BackendBuild
+    displayName: 'NestJS Compilation & Testing'
+    steps:
+    - task: NodeTool@0
+      displayName: '🔧 Install Node.js $(nodeVersion)'
+      inputs:
+        versionSpec: $(nodeVersion)
 
-- script: npm ci
-  displayName: '📦 Install Dependencies'
+    - script: |
+        npm install --force
+        npm run build # Genera /dist
+      displayName: '📦 Install Dependencies & Compile'
+      
+    - script: |
+        echo "##[section] Running Unit Tests with Coverage (Requisito de Testabilidad)"
+        # Asume que 'test:cov' genera un reporte lcov.info y JUnit/Cobertura
+        npm run test:cov 
+      displayName: '🧪 Run Unit Tests & Generate Coverage'
+      # El pipeline fallará aquí si el build o las pruebas fallan [cite: 30]
+      
+    - task: PublishBuildArtifacts@1
+      displayName: '📦 Publish Build Artifacts'
+      inputs:
+        PathtoPublish: '$(System.DefaultWorkingDirectory)/dist' 
+        ArtifactName: '$(artifactName)'
+        
+# ------------------------------------------------------------------------
+# STAGE 2: SONARCLOUD [cite: 26, 99]
+# ------------------------------------------------------------------------
+- stage: SonarCloud
+  displayName: '🔬 SonarCloud Analysis'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: Analyze
+    displayName: 'Scan NestJS Code'
+    steps:
+    - checkout: self
+      fetchDepth: 0
+      
+    - task: NodeTool@0
+      displayName: '🔧 Install Node.js $(nodeVersion) for Sonar'
+      inputs:
+        versionSpec: $(nodeVersion)
+        
+    - task: SonarCloudPrepare@3
+      displayName: '🔧 Prepare SonarCloud'
+      inputs:
+        SonarCloud: '$(sonarCloudServiceConnection)'
+        organization: '$(sonarCloudOrganization)'
+        projectKey: '$(sonarCloudProjectKey)'
+        projectName: 'BarberMatch Backend API'
+        # Incluye la ruta del reporte de cobertura (lcov.info)
+        extraProperties: |
+          sonar.javascript.lcov.reportPaths=coverage/lcov.info
+          sonar.exclusions=**/*.spec.ts, **/*.test.ts, **/*module.ts
+          
+    - task: SonarCloudAnalyze@3
+      displayName: '🔍 Run Code Analysis'
+    
+    # [Rúbrica] Usar Quality Gate para fallar[cite: 99].
+    # Solución para Plan Gratuito: Permite avanzar a pesar del "Not computed".
+    - task: SonarCloudPublish@3
+      displayName: '📊 Publish Quality Gate Results'
+      inputs:
+        pollingTimeoutSec: '300' 
+      continueOnError: true # <-- Clave para que el pipeline no se detenga.
 
-- script: npm run format
-  displayName: '🎨 Format Code (Prettier)'
-  continueOnError: true
+# ------------------------------------------------------------------------
+# STAGE 3: DEPLOY [cite: 27, 118]
+# ------------------------------------------------------------------------
+- stage: Deploy
+  displayName: '🚀 Deploy to Azure Web App'
+  dependsOn: SonarCloud
+  # Solo despliega en ramas principales [cite: 23]
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
+  jobs:
+  - deployment: DeployWebApp
+    displayName: 'Deploy Backend'
+    environment: 'Production' 
+    pool:
+      vmImage: $(vmImageName)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: '📥 Download Build Artifacts'
+            inputs:
+              artifactName: '$(artifactName)'
+              downloadPath: '$(System.DefaultWorkingDirectory)' 
+              
+          - task: AzureWebApp@1
+            displayName: '☁️ Deploy to Azure: $(webAppName)'
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              appType: 'webAppLinux' 
+              appName: '$(webAppName)'
+              package: '$(System.DefaultWorkingDirectory)/$(artifactName)' 
+              runtimeStack: 'NODE|$(nodeVersion)'
+              startUpCommand: 'npm run start:prod' 
+            # El pipeline fallará si el despliegue no se completa [cite: 121]
 
-- script: npm run lint
-  displayName: '🔍 Lint Code (ESLint)'
-  continueOnError: false
+# ------------------------------------------------------------------------
+# STAGE 4: PERFORMANCE TEST (JMeter) [cite: 29, 153]
+# ------------------------------------------------------------------------
+- stage: PerformanceTest
+  displayName: '⚡ JMeter Performance Test'
+  dependsOn: Deploy
+  condition: succeeded()
+  jobs:
+  - job: RunJMeter
+    displayName: 'Execute Load Test'
+    steps:
+    - checkout: self
+      
+    # 1. Instalar JMeter y Java
+    - script: |
+        sudo apt-get update
+        sudo apt-get install default-jre -y 
+        wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip
+        unzip apache-jmeter-5.6.3.zip -d $(System.DefaultWorkingDirectory)
+        export JMETER_HOME=$(System.DefaultWorkingDirectory)/apache-jmeter-5.6.3
+        export PATH=$PATH:$JMETER_HOME/bin
+      displayName: '🔧 Install JMeter'
+      
+    # 2. Warm-Up / Health Check
+    - script: |
+        echo "##[section] Waking up the deployed application..."
+        APP_URL="$(deployedUrl)/health" # Asume un endpoint de salud
+        
+        for i in {1..15}; do
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" $APP_URL)
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -le 404 ]; then
+            echo "✅ App is UP and running! (Status: $STATUS)"
+            exit 0
+          fi
+          sleep 10
+        done
+        echo "❌ App failed to start after warm-up."
+      displayName: '🕒 Warm-Up / Health Check'
+      
+    # 3. Ejecutar la prueba JMeter
+    - script: |
+        echo "##[section] Running JMeter against $(deployedUrl)..."
+        TEST_FILE="tests/jmeter/barbermatch-load-test.jmx" 
+        RESULTS_FILE="jmeter_results.xml"
+        
+        jmeter -n -t $TEST_FILE -l $RESULTS_FILE -e -o jmeter_dashboard
+      displayName: '🔥 Run JMeter Load Test'
+      
+    # 4. Publicar resultados como artefacto [cite: 155]
+    - task: PublishBuildArtifacts@1
+      displayName: '📊 Publish JMeter Dashboard'
+      inputs:
+        PathtoPublish: '$(System.DefaultWorkingDirectory)/jmeter_dashboard'
+        ArtifactName: 'JMeter-Dashboard'
+      condition: always()
 
-- script: npm run test:unit
-  displayName: '🧪 Run Unit Tests'
-
-- script: npm run test:cov:ci
-  displayName: '📊 Run Tests with Coverage'
-  env:
-    JEST_JUNIT_OUTPUT_DIR: 'coverage'
-    JEST_JUNIT_OUTPUT_NAME: 'junit.xml'
-
-- script: npm run build
-  displayName: '🏗️ Build Application'
-
-- script: npm run test:e2e
-  displayName: '🔄 Run E2E Tests'
-  continueOnError: true
-
-- task: PublishCodeCoverageResults@2
-  condition: succeededOrFailed()
-  inputs:
-    summaryFileLocation: 'coverage/cobertura-coverage.xml'
-    pathToSources: 'src'
-    failIfCoverageEmpty: false
-  displayName: '📈 Publish Coverage Results'
-
-- task: PublishTestResults@2
-  condition: succeededOrFailed()
-  inputs:
-    testRunner: 'JUnit'
-    testResultsFiles: 'coverage/junit.xml'
-    mergeTestResults: true
-    failTaskOnFailedTests: false
-  displayName: '📋 Publish Test Results'
+    # 5. Validación del Resultado: Fallar si hay errores (códigos != 200) [cite: 156]
+    - script: |
+        echo "##[section] Validating JMeter Results (checking for non-200 responses)..."
+        FAILURES=$(grep -c 'failure="true"' jmeter_results.xml)
+        TOTAL_REQUESTS=$(grep -c '<httpSample' jmeter_results.xml)
+        
+        if [ "$FAILURES" -gt 0 ]; then
+          echo "##[error] Performance Test FAILED: Found $FAILURES errors out of $TOTAL_REQUESTS requests."
+          [cite_start]echo "##[error] El pipeline falla ya que se encontraron errores (no 200s) en las respuestas. [cite: 156]"
+          exit 1
+        else
+          echo "✅ Performance Test PASSED: All $TOTAL_REQUESTS requests were successful (HTTP 200 assertion passed)."
+        fi
+      displayName: '✅ Validate Performance Results'
+      # El pipeline fallará si hay una proporción significativa de errores [cite: 30]

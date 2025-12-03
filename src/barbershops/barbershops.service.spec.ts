@@ -1,4 +1,3 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -97,7 +96,9 @@ describe('BarbershopsService', () => {
 
       const result = await service.addBarber(1, barberData);
 
-      expect(barbershopRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(barbershopRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
       expect(barberRepository.create).toHaveBeenCalledWith({
         ...barberData,
         barbershop: mockBarbershop,
@@ -108,7 +109,9 @@ describe('BarbershopsService', () => {
 
     it('should throw an error if barbershop not found', async () => {
       barbershopRepository.findOne.mockResolvedValue(null);
-      await expect(service.addBarber(1, {})).rejects.toThrow('Barbershop not found');
+      await expect(service.addBarber(1, {})).rejects.toThrow(
+        'Barbershop not found',
+      );
     });
   });
 });

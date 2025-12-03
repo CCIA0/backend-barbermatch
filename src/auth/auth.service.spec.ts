@@ -1,15 +1,15 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import { UserRole, CreateUserDto } from './interfaces/auth.interface';
 import { AuthService } from './auth.service';
 import { UserProfile } from '../entities/user-profile.entity';
 import { User } from '../entities/user.entity';
-import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
-  hash: jest.fn()
+  hash: jest.fn(),
 }));
 
 type MockRepository<T = any> = {
@@ -61,7 +61,6 @@ describe('AuthService', () => {
       ],
     }).compile();
 
-    
     service = moduleRef.get(AuthService);
     usersRepository = moduleRef.get(getRepositoryToken(User));
     jwtService = moduleRef.get(JwtService);
@@ -84,30 +83,43 @@ describe('AuthService', () => {
       const { password, ...userWithoutPassword } = mockUser;
       const result = await service.validateUser('test@example.com', 'password');
 
-      expect(result).toEqual({ user: userWithoutPassword, token: 'test_token' });
-      expect(jwtService.sign).toHaveBeenCalledWith({ sub: 1, email: 'test@example.com', role: 'client' });
+      expect(result).toEqual({
+        user: userWithoutPassword,
+        token: 'test_token',
+      });
+      expect(jwtService.sign).toHaveBeenCalledWith({
+        sub: 1,
+        email: 'test@example.com',
+        role: 'client',
+      });
     });
 
     it('should return null for invalid password', async () => {
       usersRepository.findOne.mockResolvedValue(mockUser);
       jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never);
 
-      const result = await service.validateUser('test@example.com', 'wrongpassword');
+      const result = await service.validateUser(
+        'test@example.com',
+        'wrongpassword',
+      );
 
       expect(result).toBeNull();
     });
 
     it('should return null for non-existent user', async () => {
       usersRepository.findOne.mockResolvedValue(null);
-      const result = await service.validateUser('nouser@example.com', 'password');
+      const result = await service.validateUser(
+        'nouser@example.com',
+        'password',
+      );
       expect(result).toBeNull();
     });
 
     it('should throw InternalServerErrorException when validation fails', async () => {
       usersRepository.findOne.mockRejectedValue(new Error('Database error'));
-      await expect(service.validateUser('test@example.com', 'password'))
-        .rejects
-        .toThrow('Error validating user');
+      await expect(
+        service.validateUser('test@example.com', 'password'),
+      ).rejects.toThrow('Error validating user');
     });
   });
 
@@ -119,8 +131,8 @@ describe('AuthService', () => {
 
       const createUserDto: CreateUserDto = {
         email: 'new@example.com',
-        password: password,
-        role: UserRole.CLIENT
+        password,
+        role: UserRole.CLIENT,
       };
 
       const userData = { ...createUserDto, password: hashedPassword };
@@ -139,28 +151,28 @@ describe('AuthService', () => {
       const createUserDto: CreateUserDto = {
         email: 'new@example.com',
         password: 'password',
-        role: UserRole.CLIENT
+        role: UserRole.CLIENT,
       };
 
       usersRepository.findOne.mockResolvedValue(mockUser); // Simular usuario existente
 
-      await expect(service.register(createUserDto))
-        .rejects
-        .toThrow('Email already exists');
+      await expect(service.register(createUserDto)).rejects.toThrow(
+        'Email already exists',
+      );
     });
 
     it('should throw InternalServerErrorException on database error', async () => {
       const createUserDto: CreateUserDto = {
         email: 'new@example.com',
         password: 'password',
-        role: UserRole.CLIENT
+        role: UserRole.CLIENT,
       };
 
       usersRepository.findOne.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.register(createUserDto))
-        .rejects
-        .toThrow('Error registering user');
+      await expect(service.register(createUserDto)).rejects.toThrow(
+        'Error registering user',
+      );
     });
   });
 });

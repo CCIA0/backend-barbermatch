@@ -1,14 +1,27 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, BadRequestException, InternalServerErrorException, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+  ParseIntPipe,
+ ValidationPipe } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto';
-import { ValidationPipe } from '@nestjs/common';
 
 @Controller('appointments')
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
   @Post()
-  async create(@Body(ValidationPipe) createAppointmentDto: CreateAppointmentDto) {
+  async create(
+    @Body(ValidationPipe) createAppointmentDto: CreateAppointmentDto,
+  ) {
     try {
       const date = new Date(createAppointmentDto.date);
       if (isNaN(date.getTime())) {
@@ -20,7 +33,8 @@ export class AppointmentsController {
         date,
       };
 
-      const appointment = await this.appointmentsService.create(appointmentData);
+      const appointment =
+        await this.appointmentsService.create(appointmentData);
       if (!appointment) {
         throw new InternalServerErrorException('Failed to create appointment');
       }
@@ -41,11 +55,11 @@ export class AppointmentsController {
   @Put(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body(ValidationPipe) updateAppointmentDto: Partial<CreateAppointmentDto>
+    @Body(ValidationPipe) updateAppointmentDto: Partial<CreateAppointmentDto>,
   ) {
     try {
-      let updateData: any = { ...updateAppointmentDto };
-      
+      const updateData: any = { ...updateAppointmentDto };
+
       if (updateAppointmentDto.date) {
         const date = new Date(updateAppointmentDto.date);
         if (isNaN(date.getTime())) {
@@ -60,7 +74,10 @@ export class AppointmentsController {
       }
       return appointment;
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException('Failed to update appointment');

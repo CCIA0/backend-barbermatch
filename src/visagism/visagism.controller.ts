@@ -1,10 +1,10 @@
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  ValidationPipe, 
-  BadRequestException, 
-  InternalServerErrorException 
+import {
+  Controller,
+  Post,
+  Body,
+  ValidationPipe,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { VisagismService } from './visagism.service';
 import { AnalyzeImageDto } from './dto/analyze-image.dto';

@@ -1,10 +1,19 @@
-import { Injectable, UnauthorizedException, ConflictException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { CreateUserDto, AuthResponse, JwtPayload } from './interfaces/auth.interface';
+import { User } from '../entities/user.entity';
+import {
+  CreateUserDto,
+  AuthResponse,
+  JwtPayload,
+} from './interfaces/auth.interface';
 
 @Injectable()
 export class AuthService {
@@ -14,12 +23,19 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(email: string, pass: string): Promise<AuthResponse | null> {
+  async validateUser(
+    email: string,
+    pass: string,
+  ): Promise<AuthResponse | null> {
     try {
       const user = await this.usersRepository.findOne({ where: { email } });
       if (user && (await bcrypt.compare(pass, user.password))) {
         const { password, ...result } = user;
-        const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role };
+        const payload: JwtPayload = {
+          sub: user.id,
+          email: user.email,
+          role: user.role,
+        };
         const token = this.jwtService.sign(payload);
         return { user: result, token };
       }
@@ -32,7 +48,9 @@ export class AuthService {
   async register(createUserDto: CreateUserDto): Promise<AuthResponse> {
     try {
       // Verificar si el email ya existe
-      const existingUser = await this.usersRepository.findOne({ where: { email: createUserDto.email } });
+      const existingUser = await this.usersRepository.findOne({
+        where: { email: createUserDto.email },
+      });
       if (existingUser) {
         throw new ConflictException('Email already exists');
       }
@@ -44,9 +62,13 @@ export class AuthService {
         role: createUserDto.role,
       });
       const savedUser = await this.usersRepository.save(user);
-      
+
       const { password, ...result } = savedUser;
-      const payload: JwtPayload = { sub: savedUser.id, email: savedUser.email, role: savedUser.role };
+      const payload: JwtPayload = {
+        sub: savedUser.id,
+        email: savedUser.email,
+        role: savedUser.role,
+      };
       const token = this.jwtService.sign(payload);
       return { user: result, token };
     } catch (error) {

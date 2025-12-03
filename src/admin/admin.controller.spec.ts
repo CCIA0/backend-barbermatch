@@ -3,12 +3,13 @@ import { AdminController } from './admin.controller';
 import { UsersService } from '../users/users.service';
 import { BarbershopsService } from '../barbershops/barbershops.service';
 import { AppointmentsService } from '../appointments/appointments.service';
+import { User } from '../entities/user.entity';
+import { Barbershop } from '../entities/barbershop.entity';
+import { Appointment } from '../entities/appointment.entity';
+import { UserRole } from '../auth/interfaces/auth.interface';
 
 describe('AdminController', () => {
   let controller: AdminController;
-  let usersService: UsersService;
-  let barbershopsService: BarbershopsService;
-  let appointmentsService: AppointmentsService;
 
   const mockUsersService = {
     findAll: jest.fn(),
@@ -44,10 +45,7 @@ describe('AdminController', () => {
       ],
     }).compile();
 
-    controller = module.createNestApplication().get<AdminController>(AdminController);
-    usersService = module.createNestApplication().get<UsersService>(UsersService);
-    barbershopsService = module.createNestApplication().get<BarbershopsService>(BarbershopsService);
-    appointmentsService = module.createNestApplication().get<AppointmentsService>(AppointmentsService);
+    controller = module.get<AdminController>(AdminController);
   });
 
   it('should be defined', () => {
@@ -56,14 +54,28 @@ describe('AdminController', () => {
 
   describe('getUsers', () => {
     it('should return all users', async () => {
-      const mockUsers = [
-        { id: 1, email: 'user1@example.com', role: 'client' },
-        { id: 2, email: 'user2@example.com', role: 'barber' },
+      const mockUsers: User[] = [
+        {
+          id: 1,
+          email: 'user1@example.com',
+          password: 'password',
+          role: UserRole.CLIENT,
+          profile: null,
+          appointments: [],
+        },
+        {
+          id: 2,
+          email: 'user2@example.com',
+          password: 'password',
+          role: UserRole.BARBER,
+          profile: null,
+          appointments: [],
+        },
       ];
 
       mockUsersService.findAll.mockResolvedValue(mockUsers);
 
-      const result = await controller.getUsers();
+      const result: User[] = await controller.getUsers();
 
       expect(result).toEqual(mockUsers);
       expect(mockUsersService.findAll).toHaveBeenCalled();
@@ -72,14 +84,28 @@ describe('AdminController', () => {
 
   describe('getBarbershops', () => {
     it('should return all barbershops', async () => {
-      const mockBarbershops = [
-        { id: 1, name: 'Barbershop 1', address: '123 Main St' },
-        { id: 2, name: 'Barbershop 2', address: '456 Oak St' },
+      const mockBarbershops: Barbershop[] = [
+        {
+          id: 1,
+          name: 'Barbershop 1',
+          address: '123 Main St',
+          schedule: '9-5',
+          barbers: [],
+          appointments: [],
+        },
+        {
+          id: 2,
+          name: 'Barbershop 2',
+          address: '456 Oak St',
+          schedule: '9-5',
+          barbers: [],
+          appointments: [],
+        },
       ];
 
       mockBarbershopsService.getBarbershops.mockResolvedValue(mockBarbershops);
 
-      const result = await controller.getBarbershops();
+      const result: Barbershop[] = await controller.getBarbershops();
 
       expect(result).toEqual(mockBarbershops);
       expect(mockBarbershopsService.getBarbershops).toHaveBeenCalled();
@@ -87,9 +113,23 @@ describe('AdminController', () => {
   });
 
   describe('getAppointments', () => {
-    const mockAppointments = [
-      { id: 1, date: '2025-09-10', userId: 1, barberId: 1 },
-      { id: 2, date: '2025-09-11', userId: 2, barberId: 2 },
+    const mockAppointments: Appointment[] = [
+      {
+        id: 1,
+        date: new Date('2025-09-10'),
+        status: 'confirmed',
+        user: null,
+        barber: null,
+        barbershop: null,
+      },
+      {
+        id: 2,
+        date: new Date('2025-09-11'),
+        status: 'pending',
+        user: null,
+        barber: null,
+        barbershop: null,
+      },
     ];
 
     beforeEach(() => {
@@ -100,7 +140,7 @@ describe('AdminController', () => {
     it('should return all appointments when no date range is provided', async () => {
       mockAppointmentsService.findAll.mockResolvedValue(mockAppointments);
 
-      const result = await controller.getAppointments();
+      const result: Appointment[] = await controller.getAppointments();
 
       expect(result).toEqual(mockAppointments);
       expect(mockAppointmentsService.findAll).toHaveBeenCalled();
@@ -110,19 +150,30 @@ describe('AdminController', () => {
       const startDate = '2025-09-10';
       const endDate = '2025-09-11';
 
-      mockAppointmentsService.findByDateRange.mockResolvedValue(mockAppointments);
+      mockAppointmentsService.findByDateRange.mockResolvedValue(
+        mockAppointments,
+      );
 
-      const result = await controller.getAppointments(startDate, endDate);
+      const result: Appointment[] = await controller.getAppointments(
+        startDate,
+        endDate,
+      );
 
       expect(result).toEqual(mockAppointments);
-      expect(mockAppointmentsService.findByDateRange).toHaveBeenCalledWith(startDate, endDate);
+      expect(mockAppointmentsService.findByDateRange).toHaveBeenCalledWith(
+        startDate,
+        endDate,
+      );
     });
 
     it('should return all appointments when only startDate is provided', async () => {
       const startDate = '2025-09-10';
       mockAppointmentsService.findAll.mockResolvedValue(mockAppointments);
 
-      const result = await controller.getAppointments(startDate, undefined);
+      const result: Appointment[] = await controller.getAppointments(
+        startDate,
+        undefined,
+      );
 
       expect(result).toEqual(mockAppointments);
       expect(mockAppointmentsService.findAll).toHaveBeenCalled();
@@ -132,7 +183,10 @@ describe('AdminController', () => {
       const endDate = '2025-09-11';
       mockAppointmentsService.findAll.mockResolvedValue(mockAppointments);
 
-      const result = await controller.getAppointments(undefined, endDate);
+      const result: Appointment[] = await controller.getAppointments(
+        undefined,
+        endDate,
+      );
 
       expect(result).toEqual(mockAppointments);
       expect(mockAppointmentsService.findAll).toHaveBeenCalled();
@@ -144,7 +198,7 @@ describe('AdminController', () => {
       const userId = 1;
       mockUsersService.delete.mockResolvedValue(true);
 
-      const result = await controller.deleteUser(userId);
+      const result: { message: string } = await controller.deleteUser(userId);
 
       expect(result).toEqual({ message: 'User deleted successfully' });
       expect(mockUsersService.delete).toHaveBeenCalledWith(userId);
@@ -154,7 +208,9 @@ describe('AdminController', () => {
       const userId = 999;
       mockUsersService.delete.mockResolvedValue(false);
 
-      await expect(controller.deleteUser(userId)).rejects.toThrow('User not found');
+      await expect(controller.deleteUser(userId)).rejects.toThrowError(
+        'User not found',
+      );
     });
   });
 
@@ -163,23 +219,32 @@ describe('AdminController', () => {
       const barbershopId = 1;
       mockBarbershopsService.deleteBarbershop.mockResolvedValue(true);
 
-      const result = await controller.deleteBarbershop(barbershopId);
+      const result: { message: string } =
+        await controller.deleteBarbershop(barbershopId);
 
       expect(result).toEqual({ message: 'Barbershop deleted successfully' });
-      expect(mockBarbershopsService.deleteBarbershop).toHaveBeenCalledWith(barbershopId);
+      expect(mockBarbershopsService.deleteBarbershop).toHaveBeenCalledWith(
+        barbershopId,
+      );
     });
 
     it('should throw NotFoundException if barbershop not found', async () => {
       const barbershopId = 999;
       mockBarbershopsService.deleteBarbershop.mockResolvedValue(false);
 
-      await expect(controller.deleteBarbershop(barbershopId)).rejects.toThrow('Barbershop not found');
+      await expect(controller.deleteBarbershop(barbershopId)).rejects.toThrowError(
+        'Barbershop not found',
+      );
     });
   });
 
   describe('getDashboard', () => {
     it('should return dashboard statistics', async () => {
-      const expected = {
+      const expected: {
+        users: number;
+        appointments: number;
+        barbershops: number;
+      } = {
         users: 100,
         appointments: 50,
         barbershops: 10,

@@ -52,7 +52,9 @@ describe('VisagismController', () => {
       const result = await controller.analyze(imageData);
 
       expect(result).toEqual(mockAnalysisResult);
-      expect(mockVisagismService.analyzeImage).toHaveBeenCalledWith(imageData.image);
+      expect(mockVisagismService.analyzeImage).toHaveBeenCalledWith(
+        imageData.image,
+      );
     });
 
     it('should handle analysis errors', async () => {
@@ -60,9 +62,13 @@ describe('VisagismController', () => {
         image: 'invalid_image_data',
       };
 
-      mockVisagismService.analyzeImage.mockRejectedValue(new Error('Invalid image data'));
+      mockVisagismService.analyzeImage.mockRejectedValue(
+        new Error('Invalid image data'),
+      );
 
-      await expect(controller.analyze(imageData)).rejects.toThrow('Invalid image data');
+      await expect(controller.analyze(imageData)).rejects.toThrow(
+        'Invalid image data',
+      );
     });
 
     it('should validate input data', async () => {

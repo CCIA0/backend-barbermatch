@@ -1,4 +1,3 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -78,11 +77,15 @@ describe('HairstylesService', () => {
         where: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue(hairstyles),
       };
-      hairstyleRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      hairstyleRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.findByFaceShape('oval');
 
-      expect(hairstyleRepository.createQueryBuilder).toHaveBeenCalledWith('hairstyle');
+      expect(hairstyleRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'hairstyle',
+      );
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         ':faceShape = ANY(hairstyle.recommendedFaceShapes)',
         { faceShape: 'oval' },

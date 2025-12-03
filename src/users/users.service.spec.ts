@@ -26,7 +26,7 @@ describe('UsersService', () => {
       id: 1,
       name: 'Test User',
       stylePreferences: 'Short hair',
-      user: null, 
+      user: null,
     },
     appointments: [],
   };

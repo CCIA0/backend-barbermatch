@@ -32,8 +32,12 @@ describe('HairstylesController', () => {
       ],
     }).compile();
 
-    controller = module.createNestApplication().get<HairstylesController>(HairstylesController);
-    hairstylesService = module.createNestApplication().get<HairstylesService>(HairstylesService);
+    controller = module
+      .createNestApplication()
+      .get<HairstylesController>(HairstylesController);
+    hairstylesService = module
+      .createNestApplication()
+      .get<HairstylesService>(HairstylesService);
   });
 
   it('should be defined', () => {
@@ -54,7 +58,9 @@ describe('HairstylesController', () => {
       const result = await controller.create(createHairstyleDto);
 
       expect(result).toEqual(mockHairstyle);
-      expect(mockHairstylesService.create).toHaveBeenCalledWith(createHairstyleDto);
+      expect(mockHairstylesService.create).toHaveBeenCalledWith(
+        createHairstyleDto,
+      );
     });
 
     it('should throw an error if creation fails', async () => {
@@ -65,9 +71,13 @@ describe('HairstylesController', () => {
         recommendedFaceShapes: ['oval', 'round'],
       };
 
-      mockHairstylesService.create.mockRejectedValue(new Error('Failed to create hairstyle'));
+      mockHairstylesService.create.mockRejectedValue(
+        new Error('Failed to create hairstyle'),
+      );
 
-      await expect(controller.create(createHairstyleDto)).rejects.toThrow('Failed to create hairstyle');
+      await expect(controller.create(createHairstyleDto)).rejects.toThrow(
+        'Failed to create hairstyle',
+      );
     });
   });
 
@@ -89,7 +99,9 @@ describe('HairstylesController', () => {
       const result = await controller.findByFaceShape('oval');
 
       expect(result).toEqual([mockHairstyle]);
-      expect(mockHairstylesService.findByFaceShape).toHaveBeenCalledWith('oval');
+      expect(mockHairstylesService.findByFaceShape).toHaveBeenCalledWith(
+        'oval',
+      );
     });
 
     it('should return empty array for invalid face shape', async () => {
@@ -98,7 +110,9 @@ describe('HairstylesController', () => {
       const result = await controller.findByFaceShape('invalid');
 
       expect(result).toEqual([]);
-      expect(mockHairstylesService.findByFaceShape).toHaveBeenCalledWith('invalid');
+      expect(mockHairstylesService.findByFaceShape).toHaveBeenCalledWith(
+        'invalid',
+      );
     });
   });
 });
