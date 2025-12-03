@@ -101,19 +101,29 @@ stages:
       inputs:
         SonarCloud: '$(sonarCloudServiceConnection)'
         organization: '$(sonarCloudOrganization)'
-        scannerMode: 'Other'
+        scannerMode: 'CLI'
         configMode: 'file'
         
-    # Create sonar-project.properties file
+    # Create sonar-project.properties file with proper paths
     - script: |
         cat > sonar-project.properties << EOF
         sonar.projectKey=iduertom_backend
         sonar.projectName=BarberMatch Backend API
         sonar.sources=src
+        sonar.language=ts
+        sonar.sourceEncoding=UTF-8
         sonar.javascript.lcov.reportPaths=coverage/lcov.info
-        sonar.exclusions=**/*.spec.ts,**/*.test.ts,**/node_modules/**,**/dist/**
+        sonar.exclusions=**/*.spec.ts,**/*.test.ts,**/node_modules/**,**/dist/**,**/coverage/**
+        sonar.tests=src
+        sonar.test.inclusions=**/*.spec.ts,**/*.test.ts
+        sonar.coverage.exclusions=**/*.spec.ts,**/*.test.ts
         EOF
-      displayName: '📝 Create sonar-project.properties'
+        
+        echo "=== Verification ==="
+        echo "Working directory: $(pwd)"
+        ls -la src/ | head -10
+        cat sonar-project.properties
+      displayName: '📝 Create sonar-project.properties with verification'
           
     - task: SonarCloudAnalyze@3
       displayName: '🔍 Run Code Analysis'
@@ -149,6 +159,38 @@ stages:
             inputs:
               artifactName: '$(artifactName)'
               downloadPath: '$(System.DefaultWorkingDirectory)' 
+          
+          # Create Azure Web App if it doesn't exist
+          - task: AzureCLI@2
+            displayName: '🏗️ Create Azure Web App if not exists'
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Check if resource group exists, create if not
+                if ! az group show --name $(resourceGroupName) --output none 2>/dev/null; then
+                  echo "Creating resource group $(resourceGroupName)..."
+                  az group create --name $(resourceGroupName) --location "East US"
+                fi
+                
+                # Check if app service plan exists, create if not
+                PLAN_NAME="$(resourceGroupName)-plan"
+                if ! az appservice plan show --name $PLAN_NAME --resource-group $(resourceGroupName) --output none 2>/dev/null; then
+                  echo "Creating App Service Plan $PLAN_NAME..."
+                  az appservice plan create --name $PLAN_NAME --resource-group $(resourceGroupName) --sku F1 --is-linux
+                fi
+                
+                # Check if web app exists, create if not
+                if ! az webapp show --name $(webAppName) --resource-group $(resourceGroupName) --output none 2>/dev/null; then
+                  echo "Creating Web App $(webAppName)..."
+                  az webapp create --name $(webAppName) --resource-group $(resourceGroupName) --plan $PLAN_NAME --runtime "NODE|$(nodeVersion)"
+                  
+                  # Configure startup command
+                  az webapp config set --name $(webAppName) --resource-group $(resourceGroupName) --startup-file "npm run start:prod"
+                else
+                  echo "Web App $(webAppName) already exists"
+                fi
               
           - task: AzureWebApp@1
             displayName: '☁️ Deploy to Azure: $(webAppName)'
@@ -158,8 +200,7 @@ stages:
               appName: '$(webAppName)'
               package: '$(System.DefaultWorkingDirectory)/$(artifactName)' 
               runtimeStack: 'NODE|$(nodeVersion)'
-              startUpCommand: 'npm run start:prod' 
-            # El pipeline fallará si el despliegue no se completa [cite: 121]
+              startUpCommand: 'npm run start:prod'
 
 # ------------------------------------------------------------------------
 # STAGE 4: PERFORMANCE TEST (JMeter) [cite: 29, 153]
