@@ -26,7 +26,7 @@ variables:
   # --- CONEXIÓN CON SONARCLOUD ---
   sonarCloudServiceConnection: 'SonarQube-Connection'
   sonarCloudOrganization: 'iduertom'
-  sonarCloudProjectKey: 'iduertom_BarberMatch-Backend' # <--- CAMBIAR SI ES NECESARIO
+  sonarCloudProjectKey: 'BarberMatch-backend' # <--- CAMBIAR SI ES NECESARIO
   
   # --- CONEXIÓN CON AZURE ---
   azureSubscription: 'AzureServiceConnection'
@@ -96,7 +96,7 @@ stages:
         npm run test:cov
       displayName: '📊 Regenerate Coverage for SonarCloud'
         
-    - task: SonarCloudPrepare@2
+    - task: SonarCloudPrepare@3
       displayName: '🔧 Prepare SonarCloud'
       inputs:
         SonarCloud: '$(sonarCloudServiceConnection)'
@@ -108,15 +108,17 @@ stages:
         cliSources: 'src'
         extraProperties: |
           sonar.javascript.lcov.reportPaths=coverage/lcov.info
-          sonar.exclusions=**/*.spec.ts,**/*.test.ts,**/node_modules/**,**/dist/**
-          sonar.typescript.node=/usr/bin/node
+          sonar.exclusions=**/*.spec.ts,**/*.test.ts,**/node_modules/**,**/dist/**,**/coverage/**
+          sonar.coverage.exclusions=**/*.spec.ts,**/*.test.ts
+          sonar.tests=src
+          sonar.test.inclusions=**/*.spec.ts,**/*.test.ts
           
-    - task: SonarCloudAnalyze@2
+    - task: SonarCloudAnalyze@3
       displayName: '🔍 Run Code Analysis'
     
     # [Rúbrica] Usar Quality Gate para fallar[cite: 99].
     # Solución para Plan Gratuito: Permite avanzar a pesar del "Not computed".
-    - task: SonarCloudPublish@2
+    - task: SonarCloudPublish@3
       displayName: '📊 Publish Quality Gate Results'
       inputs:
         pollingTimeoutSec: '300' 
