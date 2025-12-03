@@ -31,9 +31,9 @@ variables:
   # --- CONEXIÓN CON AZURE ---
   azureSubscription: 'AzureServiceConnection'
   resourceGroupName: 'barbermatch-rg'
-  webAppName: 'barbermatch-backend-api-$(Build.BuildId)'
+  webAppName: 'iduertom_backend-api-$(Build.BuildId)'
   # URL para JMeter (asume el formato estándar de Azure Web App)
-  deployedUrl: 'https://barbermatch-backend-api-$(Build.BuildId).azurewebsites.net'
+  deployedUrl: 'https://iduertom_backend-api-$(Build.BuildId).azurewebsites.net'
 
 pool:
   vmImage: $(vmImageName)
@@ -103,17 +103,12 @@ stages:
         organization: '$(sonarCloudOrganization)'
         scannerMode: 'CLI'
         configMode: 'manual'
-        cliProjectKey: '$(sonarCloudProjectKey)'
+        cliProjectKey: 'iduertom_backend'
         cliProjectName: 'BarberMatch Backend API'
         cliSources: 'src'
         extraProperties: |
-          sonar.projectKey=BarberMatch-Backend
-          sonar.projectName=BarberMatch Backend API
-          sonar.sources=src
           sonar.javascript.lcov.reportPaths=coverage/lcov.info
-          sonar.exclusions=**/*.spec.ts, **/*.test.ts, **/node_modules/**, **/dist/**
-          sonar.coverage.exclusions=**/*.spec.ts, **/*.test.ts
-          sonar.sourceEncoding=UTF-8
+          sonar.exclusions=**/*.spec.ts,**/*.test.ts,**/node_modules/**,**/dist/**
           
     - task: SonarCloudAnalyze@3
       displayName: '🔍 Run Code Analysis'
