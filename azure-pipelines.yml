@@ -101,6 +101,8 @@ stages:
       inputs:
         SonarCloud: '$(sonarCloudServiceConnection)'
         organization: '$(sonarCloudOrganization)'
+        scannerMode: 'CLI'
+        configMode: 'manual'
         projectKey: '$(sonarCloudProjectKey)'
         projectName: 'BarberMatch Backend API'
         extraProperties: |
