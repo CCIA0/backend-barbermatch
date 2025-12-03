@@ -40,4 +40,15 @@ export class UsersService {
     }
     return null;
   }
+
+  async findAll(): Promise<User[]> {
+    return this.usersRepository.find({
+      relations: ['profile'],
+    });
+  }
+
+  async delete(id: number): Promise<boolean> {
+    const result = await this.usersRepository.delete(id);
+    return result.affected > 0;
+  }
 }

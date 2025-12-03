@@ -62,7 +62,10 @@ describe('AppointmentsService', () => {
 
   describe('create', () => {
     it('should create and save a new appointment', async () => {
-      const appointmentData = { date: new Date(), status: 'pending' };
+      const appointmentData = { 
+        date: new Date(), 
+        status: 'pending' as const 
+      };
       appointmentRepository.create.mockReturnValue(appointmentData as any);
       appointmentRepository.save.mockResolvedValue(mockAppointment);
 
@@ -92,7 +95,7 @@ describe('AppointmentsService', () => {
 
   describe('update', () => {
     it('should update and return the appointment', async () => {
-      const updatedData = { status: 'confirmed' };
+      const updatedData = { status: 'confirmed' as const };
       const updatedAppointment = { ...mockAppointment, ...updatedData };
 
       appointmentRepository.findOne.mockResolvedValue(mockAppointment);
@@ -111,14 +114,17 @@ describe('AppointmentsService', () => {
 
     it('should return null if appointment not found', async () => {
       appointmentRepository.findOne.mockResolvedValue(null);
-      const result = await service.update(1, { status: 'confirmed' });
+      const result = await service.update(1, { status: 'confirmed' as const });
       expect(result).toBeNull();
     });
   });
 
   describe('cancel', () => {
     it('should cancel an appointment', async () => {
-      const cancelledAppointment = { ...mockAppointment, status: 'cancelled' };
+      const cancelledAppointment: Appointment = { 
+        ...mockAppointment, 
+        status: 'cancelled' as const 
+      };
       const updateSpy = jest
         .spyOn(service, 'update')
         .mockResolvedValue(cancelledAppointment);

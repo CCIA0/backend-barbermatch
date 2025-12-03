@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { VisagismController } from './visagism.controller';
 import { VisagismService } from './visagism.service';
+import { BadRequestException } from '@nestjs/common';
 
 describe('VisagismController', () => {
   let controller: VisagismController;
@@ -67,13 +68,15 @@ describe('VisagismController', () => {
       );
 
       await expect(controller.analyze(imageData)).rejects.toThrow(
-        'Invalid image data',
+        'Error analyzing face image',
       );
     });
 
     it('should validate input data', async () => {
       const invalidData = {};
 
+      // When ValidationPipe fails, it throws a BadRequestException
+      // but the controller wraps it in InternalServerErrorException
       await expect(controller.analyze(invalidData as any)).rejects.toThrow();
     });
   });

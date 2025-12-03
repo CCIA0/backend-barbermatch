@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { UsersService } from './users.service';
 import { User } from '../entities/user.entity';
 import { UserProfile } from '../entities/user-profile.entity';
+import { UserRole } from '../auth/interfaces/auth.interface';
 
 type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
 
@@ -21,7 +22,7 @@ describe('UsersService', () => {
     id: 1,
     email: 'test@example.com',
     password: 'password',
-    role: 'client',
+    role: UserRole.CLIENT,
     profile: {
       id: 1,
       name: 'Test User',

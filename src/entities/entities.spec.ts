@@ -5,6 +5,7 @@ import { FaceAnalysisResult } from './face-analysis-result.entity';
 import { Hairstyle } from './hairstyle.entity';
 import { UserProfile } from './user-profile.entity';
 import { User } from './user.entity';
+import { UserRole } from '../auth/interfaces/auth.interface';
 
 describe('Entities', () => {
   it('should create an Appointment instance', () => {
@@ -58,7 +59,7 @@ describe('Entities', () => {
     entity.id = 1;
     entity.email = 'test@example.com';
     entity.password = 'password';
-    entity.role = 'client';
+    entity.role = UserRole.CLIENT;
     expect(entity).toBeInstanceOf(User);
   });
 });

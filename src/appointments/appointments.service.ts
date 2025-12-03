@@ -45,4 +45,18 @@ export class AppointmentsService {
   async cancel(id: number): Promise<Appointment | null> {
     return this.update(id, { status: 'cancelled' });
   }
+
+  async findByDateRange(
+    startDate: string,
+    endDate: string,
+  ): Promise<Appointment[]> {
+    return this.appointmentRepository
+      .createQueryBuilder('appointment')
+      .leftJoinAndSelect('appointment.user', 'user')
+      .leftJoinAndSelect('appointment.barber', 'barber')
+      .leftJoinAndSelect('appointment.barbershop', 'barbershop')
+      .where('appointment.date >= :startDate', { startDate })
+      .andWhere('appointment.date <= :endDate', { endDate })
+      .getMany();
+  }
 }

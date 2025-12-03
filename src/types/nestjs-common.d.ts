@@ -1,13 +1,26 @@
 declare module '@nestjs/common' {
   export class ValidationPipe {}
+  export class ParseIntPipe {}
   export class UnauthorizedException extends Error {}
   export class BadRequestException extends Error {}
   export class ConflictException extends Error {}
   export class InternalServerErrorException extends Error {}
   export class NotFoundException extends Error {}
 
+  export interface ExecutionContext {
+    switchToHttp(): any;
+    getHandler(): () => any;
+    getClass(): () => any;
+  }
+
+  export interface CanActivate {
+    canActivate(context: ExecutionContext): boolean | Promise<boolean>;
+  }
+
   export function Controller(prefix?: string): ClassDecorator;
   export function Injectable(): ClassDecorator;
+  export function Module(metadata: any): ClassDecorator;
+  export function SetMetadata(key: string, value: any): MethodDecorator;
   export function Get(path?: string): MethodDecorator;
   export function Post(path?: string): MethodDecorator;
   export function Put(path?: string): MethodDecorator;
@@ -15,7 +28,7 @@ declare module '@nestjs/common' {
   export function Body(pipe?: ValidationPipe): ParameterDecorator;
   export function Param(
     param?: string,
-    pipe?: ValidationPipe,
+    pipe?: any,
   ): ParameterDecorator;
   export function Query(
     param?: string,

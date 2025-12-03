@@ -84,12 +84,15 @@ describe('RolesGuard', () => {
 describe('Roles Decorator', () => {
   it('should set metadata with provided roles', () => {
     const roles = ['admin', 'barber'];
-    const target = {};
-    const decorator = Roles(...roles);
+    
+    // Mock class with decorated method
+    class TestClass {
+      @Roles(...roles)
+      testMethod() {}
+    }
 
-    decorator(target);
-
-    const metadata = Reflect.getMetadata('roles', target);
+    const reflector = new Reflector();
+    const metadata = reflector.get('roles', TestClass.prototype.testMethod);
     expect(metadata).toEqual(roles);
   });
 });

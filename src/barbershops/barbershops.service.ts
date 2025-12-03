@@ -35,4 +35,9 @@ export class BarbershopsService {
     const barber = this.barberRepository.create({ ...barberData, barbershop });
     return this.barberRepository.save(barber);
   }
+
+  async deleteBarbershop(id: number): Promise<boolean> {
+    const result = await this.barbershopRepository.delete(id);
+    return result.affected > 0;
+  }
 }
