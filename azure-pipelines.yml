@@ -108,6 +108,7 @@ stages:
         cliSources: 'src'
         extraProperties: |
           sonar.javascript.lcov.reportPaths=coverage/lcov.info
+          sonar.testExecutionReportPaths=coverage/junit.xml
           sonar.exclusions=**/*.spec.ts,**/*.test.ts,**/node_modules/**,**/dist/**,**/coverage/**
           sonar.coverage.exclusions=**/*.spec.ts,**/*.test.ts
           sonar.tests=src
