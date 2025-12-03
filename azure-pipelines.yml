@@ -54,7 +54,7 @@ stages:
         versionSpec: $(nodeVersion)
 
     - script: |
-        npm install --force
+        npm ci
         npm run build # Genera /dist
       displayName: '📦 Install Dependencies & Compile'
       
