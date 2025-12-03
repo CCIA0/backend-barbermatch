@@ -1,16 +1,17 @@
 services:
   - type: web
     name: barbermatch-backend
-    env: node
+    runtime: node
+    region: oregon
     plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm run start:prod
+    branch: main
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/main.js
     healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
       - key: DATABASE_URL
         fromDatabase:
           name: barbermatch-db
@@ -24,4 +25,6 @@ databases:
   - name: barbermatch-db
     databaseName: barber_db
     user: barbermatch_user
+    region: oregon
     plan: free
+    postgresMajorVersion: 16
