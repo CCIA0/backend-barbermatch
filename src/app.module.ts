@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -21,23 +22,55 @@ import { VisagismModule } from './visagism/visagism.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'barbermatch_user',
-      password: 'barber123',
-      database: 'barber_db',
-      entities: [
-        User,
-        UserProfile,
-        Appointment,
-        Barbershop,
-        Barber,
-        Hairstyle,
-        FaceAnalysisResult,
-      ],
-      synchronize: true, // Cambia a false en producción
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get('DATABASE_URL');
+        const isProduction = configService.get('NODE_ENV') === 'production';
+        
+        if (databaseUrl) {
+          // Configuración para producción con DATABASE_URL
+          return {
+            type: 'postgres',
+            url: databaseUrl,
+            entities: [
+              User,
+              UserProfile,
+              Appointment,
+              Barbershop,
+              Barber,
+              Hairstyle,
+              FaceAnalysisResult,
+            ],
+            synchronize: !isProduction,
+            ssl: isProduction ? { rejectUnauthorized: false } : false,
+          };
+        } else {
+          // Configuración para desarrollo
+          return {
+            type: 'postgres',
+            host: configService.get('DB_HOST', 'localhost'),
+            port: configService.get('DB_PORT', 5432),
+            username: configService.get('DB_USERNAME', 'barbermatch_user'),
+            password: configService.get('DB_PASSWORD', 'barber123'),
+            database: configService.get('DB_NAME', 'barber_db'),
+            entities: [
+              User,
+              UserProfile,
+              Appointment,
+              Barbershop,
+              Barber,
+              Hairstyle,
+              FaceAnalysisResult,
+            ],
+            synchronize: !isProduction,
+          };
+        }
+      },
+      inject: [ConfigService],
     }),
     TypeOrmModule.forFeature([
       User,
