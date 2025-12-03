@@ -26,7 +26,7 @@ variables:
   # --- CONEXIÓN CON SONARCLOUD ---
   sonarCloudServiceConnection: 'SonarQube-Connection'
   sonarCloudOrganization: 'iduertom'
-  sonarCloudProjectKey: 'BarberMatch-backend' # <--- CAMBIAR SI ES NECESARIO
+  sonarCloudProjectKey: 'iduertom_BarberMatch-Backend' # <--- ¡CORREGIDO!
   
   # --- CONEXIÓN CON AZURE ---
   azureSubscription: 'AzureServiceConnection'
@@ -101,18 +101,11 @@ stages:
       inputs:
         SonarCloud: '$(sonarCloudServiceConnection)'
         organization: '$(sonarCloudOrganization)'
-        scannerMode: 'CLI'
-        configMode: 'manual'
-        cliProjectKey: '$(sonarCloudProjectKey)'
-        cliProjectName: 'BarberMatch Backend API'
-        cliSources: 'src'
+        projectKey: '$(sonarCloudProjectKey)'
+        projectName: 'BarberMatch Backend API'
         extraProperties: |
           sonar.javascript.lcov.reportPaths=coverage/lcov.info
-          sonar.testExecutionReportPaths=coverage/junit.xml
-          sonar.exclusions=**/*.spec.ts,**/*.test.ts,**/node_modules/**,**/dist/**,**/coverage/**
-          sonar.coverage.exclusions=**/*.spec.ts,**/*.test.ts
-          sonar.tests=src
-          sonar.test.inclusions=**/*.spec.ts,**/*.test.ts
+          sonar.exclusions=**/*.spec.ts, **/*.test.ts, **/node_modules/**, **/dist/**
           
     - task: SonarCloudAnalyze@3
       displayName: '🔍 Run Code Analysis'
