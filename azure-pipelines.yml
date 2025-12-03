@@ -101,14 +101,19 @@ stages:
       inputs:
         SonarCloud: '$(sonarCloudServiceConnection)'
         organization: '$(sonarCloudOrganization)'
-        scannerMode: 'CLI'
-        configMode: 'manual'
-        cliProjectKey: 'iduertom_backend'
-        cliProjectName: 'BarberMatch Backend API'
-        cliSources: 'src'
-        extraProperties: |
-          sonar.javascript.lcov.reportPaths=coverage/lcov.info
-          sonar.exclusions=**/*.spec.ts,**/*.test.ts,**/node_modules/**,**/dist/**
+        scannerMode: 'Other'
+        configMode: 'file'
+        
+    # Create sonar-project.properties file
+    - script: |
+        cat > sonar-project.properties << EOF
+        sonar.projectKey=iduertom_backend
+        sonar.projectName=BarberMatch Backend API
+        sonar.sources=src
+        sonar.javascript.lcov.reportPaths=coverage/lcov.info
+        sonar.exclusions=**/*.spec.ts,**/*.test.ts,**/node_modules/**,**/dist/**
+        EOF
+      displayName: '📝 Create sonar-project.properties'
           
     - task: SonarCloudAnalyze@3
       displayName: '🔍 Run Code Analysis'
