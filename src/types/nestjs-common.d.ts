@@ -1,6 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare module '@nestjs/common' {
-  export class ValidationPipe {}
+  export interface ValidationPipeOptions {
+    whitelist?: boolean;
+    forbidNonWhitelisted?: boolean;
+    transform?: boolean;
+    transformOptions?: any;
+  }
+
+  export class ValidationPipe {
+    constructor(options?: ValidationPipeOptions);
+  }
+  
   export class ParseIntPipe {}
   export class UnauthorizedException extends Error {}
   export class BadRequestException extends Error {}
