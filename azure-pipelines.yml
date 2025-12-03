@@ -24,7 +24,7 @@ variables:
   artifactName: 'backend-dist-package'
   
   # --- CONEXIÓN CON SONARCLOUD ---
-  sonarCloudServiceConnection: 'SonarQube-Connection'
+  sonarCloudServiceConnection: 'SonarQube-Back'
   sonarCloudOrganization: 'iduertom'
   sonarCloudProjectKey: 'BarberMatch-backend' # <--- ¡CORREGIDO!
   
