@@ -1,5 +1,4 @@
 # azure-pipelines-backend.yml for BarberMatch (Nest.js)
-# Cumple con la Rúbrica: Build -> SonarCloud -> Deploy -> JMeter
 
 trigger:
   branches:
@@ -9,7 +8,7 @@ trigger:
     - develop
     - feature/*
 
-# [Rúbrica] Disparo por Pull Request [cite: 23, 54]
+# [Rúbrica] Disparo por Pull Request
 pr:
   branches:
     include:
@@ -26,13 +25,12 @@ variables:
   # --- CONEXIÓN CON SONARCLOUD ---
   sonarCloudServiceConnection: 'SonarQube-Back'
   sonarCloudOrganization: 'iduertom'
-  sonarCloudProjectKey: 'iduertom_backend' # <--- ¡CORREGIDO!
+  sonarCloudProjectKey: 'iduertom_backend' # Clave confirmada
   
   # --- CONEXIÓN CON AZURE ---
   azureSubscription: 'AzureServiceConnection'
   resourceGroupName: 'barbermatch-rg'
   webAppName: 'iduertom_backend-api-$(Build.BuildId)'
-  # URL para JMeter (asume el formato estándar de Azure Web App)
   deployedUrl: 'https://iduertom_backend-api-$(Build.BuildId).azurewebsites.net'
 
 pool:
@@ -40,7 +38,7 @@ pool:
 
 stages:
 # ------------------------------------------------------------------------
-# STAGE 1: BUILD, TEST & PACKAGE [cite: 25, 75, 76]
+# STAGE 1: BUILD, TEST & PACKAGE 
 # ------------------------------------------------------------------------
 - stage: Build
   displayName: '🏗️ Build, Test & Package Backend'
@@ -55,15 +53,13 @@ stages:
 
     - script: |
         npm ci
-        npm run build # Genera /dist
+        npm run build 
       displayName: '📦 Install Dependencies & Compile'
       
     - script: |
         echo "##[section] Running Unit Tests with Coverage (Requisito de Testabilidad)"
-        # Asume que 'test:cov' genera un reporte lcov.info y JUnit/Cobertura
         npm run test:cov 
       displayName: '🧪 Run Unit Tests & Generate Coverage'
-      # El pipeline fallará aquí si el build o las pruebas fallan [cite: 30]
       
     - task: PublishBuildArtifacts@1
       displayName: '📦 Publish Build Artifacts'
@@ -72,7 +68,7 @@ stages:
         ArtifactName: '$(artifactName)'
         
 # ------------------------------------------------------------------------
-# STAGE 2: SONARCLOUD [cite: 26, 99]
+# STAGE 2: SONARCLOUD
 # ------------------------------------------------------------------------
 - stage: SonarCloud
   displayName: '🔬 SonarCloud Analysis'
@@ -90,12 +86,11 @@ stages:
       inputs:
         versionSpec: $(nodeVersion)
     
-    # Reinstalar dependencias y regenerar cobertura para SonarCloud
     - script: |
         npm ci
         npm run test:cov
       displayName: '📊 Regenerate Coverage for SonarCloud'
-        
+      
     - task: SonarCloudPrepare@3
       displayName: '🔧 Prepare SonarCloud'
       inputs:
@@ -104,7 +99,6 @@ stages:
         scannerMode: 'CLI'
         configMode: 'file'
         
-    # Create sonar-project.properties file with proper paths
     - script: |
         cat > sonar-project.properties << EOF
         sonar.projectKey=iduertom_backend
@@ -118,31 +112,24 @@ stages:
         sonar.test.inclusions=**/*.spec.ts,**/*.test.ts
         sonar.coverage.exclusions=**/*.spec.ts,**/*.test.ts
         EOF
-        
-        echo "=== Verification ==="
-        echo "Working directory: $(pwd)"
-        ls -la src/ | head -10
         cat sonar-project.properties
       displayName: '📝 Create sonar-project.properties with verification'
           
     - task: SonarCloudAnalyze@3
       displayName: '🔍 Run Code Analysis'
     
-    # [Rúbrica] Usar Quality Gate para fallar[cite: 99].
-    # Solución para Plan Gratuito: Permite avanzar a pesar del "Not computed".
     - task: SonarCloudPublish@3
       displayName: '📊 Publish Quality Gate Results'
       inputs:
         pollingTimeoutSec: '300' 
-      continueOnError: true # <-- Clave para que el pipeline no se detenga.
+      continueOnError: true 
 
 # ------------------------------------------------------------------------
-# STAGE 3: DEPLOY [cite: 27, 118]
+# STAGE 3: DEPLOY (Con la solución de Policy Fallback y Pausa)
 # ------------------------------------------------------------------------
 - stage: Deploy
   displayName: '🚀 Deploy to Azure Web App'
   dependsOn: SonarCloud
-  # Solo despliega en ramas principales [cite: 23]
   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
   jobs:
   - deployment: DeployWebApp
@@ -159,10 +146,10 @@ stages:
             inputs:
               artifactName: '$(artifactName)'
               downloadPath: '$(System.DefaultWorkingDirectory)' 
-          
-          # Create Azure Web App if it doesn't exist
+              
+          # Script de Azure CLI con el FALLBACK MULTI-REGIÓN + PAUSA DE 10S
           - task: AzureCLI@2
-            displayName: '🏗️ Create Azure Web App with multi-region fallback'
+            displayName: '🏗️ Create Azure Web App with policy fallback (Delayed Creation)'
             inputs:
               azureSubscription: '$(azureSubscription)'
               scriptType: 'bash'
@@ -170,97 +157,83 @@ stages:
               inlineScript: |
                 set -euo pipefail
                 
-                # --- CONFIGURACIÓN BASADA EN EL SCRIPT DEL PROFESOR ---
+                # --- CONFIGURACIÓN DE LA APLICACIÓN ---
                 RG_NAME="$(resourceGroupName)"
                 PLAN_BASE_NAME="$(resourceGroupName)-plan"
-                WEBAPP_NAME="$(webAppName)"
+                WEBAPP_NAME="iduertom_backend-api-$(Build.BuildId)" 
                 RUNTIME="NODE|$(nodeVersion)"
-                SKU_LEVEL="F1"  # Free tier para CI/CD
-                LOCATION_LIST=("brazilsouth" "eastus" "westeurope" "canadacentral" "southcentralus" "westus3" "eastus2" "westus2" "centralus" "northeurope")
-                
-                echo "Checking Microsoft.Web provider registration..."
-                reg_state=$(az provider show --namespace Microsoft.Web --query registrationState -o tsv 2>/dev/null || echo "NotRegistered")
-                echo "Current registration state: $reg_state"
-                if [ "$reg_state" != "Registered" ]; then
-                  echo "Attempting to register Microsoft.Web provider..."
-                  az provider register --namespace Microsoft.Web || true
-                  sleep 30  # Wait a bit for registration to process
-                fi
+                SKU_LEVEL="B1" # Usamos B1 para evitar restricciones de F1
+                # Lista extendida de regiones para aumentar la probabilidad de éxito
+                LOCATION_LIST=("eastus" "westeurope" "canadacentral" "brazilsouth" "westus3" "eastus2" "westus2" "southcentralus" "centralus" "northeurope")
 
-                # 1. Crear el Grupo de Recursos (si ya existe, el CLI lo ignorará)
+                # 1. Crear el Grupo de Recursos
                 echo "Creando o verificando Grupo de Recursos: $RG_NAME"
                 az group create --name "$RG_NAME" --location eastus || true
 
-                # 2. Inicializar la variable de éxito
                 SUCCESS=false
+                FINAL_LOCATION=""
 
-                # 3. Verificar si la Web App ya existe
-                if az webapp show --name "$WEBAPP_NAME" --resource-group "$RG_NAME" --output none 2>/dev/null; then
-                  echo "✅ Web App $WEBAPP_NAME ya existe. Saltando creación."
-                  SUCCESS=true
-                else
-                  # 4. Iniciar el bucle para intentar en diferentes regiones
-                  for LOCATION in "${LOCATION_LIST[@]}"
-                  do
-                    PLAN_NAME="${PLAN_BASE_NAME}-${LOCATION}"
-                    echo -e "\n--- Intentando crear plan de servicio en la región: $LOCATION ---"
+                # 2. Bucle para intentar crear el plan y la web app en cada región
+                for LOCATION in "${LOCATION_LIST[@]}"
+                do
+                  PLAN_NAME="${PLAN_BASE_NAME}-${LOCATION}"
+                  echo -e "\n--- Intentando crear plan de servicio en la región: $LOCATION ---"
 
-                    # Verificar si el plan ya existe en esta región
-                    if az appservice plan show --name "$PLAN_NAME" --resource-group "$RG_NAME" --output none 2>/dev/null; then
-                      echo "Plan $PLAN_NAME ya existe en $LOCATION. Intentando crear Web App..."
-                    else
-                      # Intento de creación del App Service Plan (ASP)
-                      if az appservice plan create \
-                        --name "$PLAN_NAME" \
-                        --resource-group "$RG_NAME" \
-                        --location "$LOCATION" \
-                        --sku "$SKU_LEVEL" \
-                        --is-linux &> /dev/null; then
-                        
-                        echo -e "✅ Éxito: Plan de servicio creado en $LOCATION (Nombre: $PLAN_NAME)."
-                      else
-                        echo "❌ Fallo: La creación del Plan de App Service fue denegada en $LOCATION. Intentando la siguiente región."
-                        continue
-                      fi
-                    fi
-
-                    # 5. Crear la Web App en la región exitosa
+                  # Intentamos crear el App Service Plan
+                  if az appservice plan create \
+                    --name "$PLAN_NAME" \
+                    --resource-group "$RG_NAME" \
+                    --location "$LOCATION" \
+                    --sku "$SKU_LEVEL" \
+                    --is-linux &> /dev/null; then
+                    
+                    echo -e "✅ Éxito: Plan de servicio creado en $LOCATION (Nombre: $PLAN_NAME)."
+                    
+                    # 💡 SOLUCIÓN CLAVE: Pausa para dar tiempo a Azure antes de adjuntar la Web App
+                    echo "🕒 Pausa de 10 segundos para mitigar problemas de concurrencia/saturación de Azure..."
+                    sleep 10
+                    
                     echo "Creando Web App $WEBAPP_NAME en $LOCATION..."
+                    # Intentamos crear la Web App
                     if az webapp create \
                       --name "$WEBAPP_NAME" \
                       --resource-group "$RG_NAME" \
                       --plan "$PLAN_NAME" \
                       --runtime "$RUNTIME" &> /dev/null; then
                       
-                      echo -e "🎉 Éxito: Web App creada y desplegada correctamente en $LOCATION."
+                      echo -e "🎉 Éxito: Web App creada correctamente en $LOCATION."
                       
-                      # Configure startup command
+                      # Configurar el comando de inicio para Nest.js
                       az webapp config set --name "$WEBAPP_NAME" --resource-group "$RG_NAME" --startup-file "npm run start:prod" &> /dev/null || true
                       
                       SUCCESS=true
-                      break # Rompe el bucle si ambos recursos se crearon con éxito
+                      FINAL_LOCATION="$LOCATION"
+                      break # Éxito total: salimos del bucle
                     else
                       echo "❌ Fallo: El Plan fue creado, pero la Web App falló. Intentando la siguiente región."
-                      # Opcional: Eliminar el plan que se creó para limpiar
+                      # Limpiamos el plan fallido para liberar cuota (importante)
                       az appservice plan delete --name "$PLAN_NAME" --resource-group "$RG_NAME" --yes &> /dev/null || true
                     fi
-                  done
-                fi
+                  else
+                    echo "❌ Fallo: La creación del Plan de App Service fue denegada en $LOCATION. Intentando la siguiente región."
+                  fi
+                done
 
-                # 6. Mensaje de resultado final
+                # 3. Resultado final y exportación de variables
                 if [ "$SUCCESS" = true ]; then
-                  echo -e "\n--- DESPLIEGUE COMPLETO ---"
-                  echo "URL: https://$WEBAPP_NAME.azurewebsites.net"
-                  echo "Web App creada exitosamente."
+                  DEPLOYED_URL="https://$WEBAPP_NAME.azurewebsites.net"
+                  echo "##vso[task.setvariable variable=webAppName]$WEBAPP_NAME"
+                  echo "##vso[task.setvariable variable=deployedUrl]$DEPLOYED_URL"
+                  echo -e "\n--- DESPLIEGUE COMPLETO EN AZURE ---"
+                  echo "URL de Despliegue: $DEPLOYED_URL"
                 else
                   echo -e "\n--- ERROR CRÍTICO ---"
-                  echo "No se pudo crear el App Service Plan en ninguna de las regiones intentadas."
-                  echo "Verifica que la restricción de política ('sys:regionrestriction') fue eliminada del Portal de Azure."
+                  echo "No se pudo crear la Web App en ninguna de las regiones intentadas."
                   exit 1
                 fi
               
           - task: AzureWebApp@1
-            displayName: '☁️ Deploy to Azure: $(webAppName)'
+            displayName: '☁️ Deploy Code to Azure: $(webAppName)'
             inputs:
               azureSubscription: '$(azureSubscription)'
               appType: 'webAppLinux' 
@@ -270,7 +243,7 @@ stages:
               startUpCommand: 'npm run start:prod'
 
 # ------------------------------------------------------------------------
-# STAGE 4: PERFORMANCE TEST (JMeter) [cite: 29, 153]
+# STAGE 4: PERFORMANCE TEST (JMeter) 
 # ------------------------------------------------------------------------
 - stage: PerformanceTest
   displayName: '⚡ JMeter Performance Test'
@@ -301,11 +274,12 @@ stages:
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" $APP_URL)
           if [ "$STATUS" -ge 200 ] && [ "$STATUS" -le 404 ]; then
             echo "✅ App is UP and running! (Status: $STATUS)"
-            exit 0
+            break
           fi
           sleep 10
         done
         echo "❌ App failed to start after warm-up."
+        exit 1 # Fallar si no se levanta
       displayName: '🕒 Warm-Up / Health Check'
       
     # 3. Ejecutar la prueba JMeter
@@ -317,7 +291,7 @@ stages:
         jmeter -n -t $TEST_FILE -l $RESULTS_FILE -e -o jmeter_dashboard
       displayName: '🔥 Run JMeter Load Test'
       
-    # 4. Publicar resultados como artefacto [cite: 155]
+    # 4. Publicar resultados como artefacto
     - task: PublishBuildArtifacts@1
       displayName: '📊 Publish JMeter Dashboard'
       inputs:
@@ -325,7 +299,7 @@ stages:
         ArtifactName: 'JMeter-Dashboard'
       condition: always()
 
-    # 5. Validación del Resultado: Fallar si hay errores (códigos != 200) [cite: 156]
+    # 5. Validación del Resultado: Fallar si hay errores (códigos != 200)
     - script: |
         echo "##[section] Validating JMeter Results (checking for non-200 responses)..."
         FAILURES=$(grep -c 'failure="true"' jmeter_results.xml)
@@ -333,10 +307,9 @@ stages:
         
         if [ "$FAILURES" -gt 0 ]; then
           echo "##[error] Performance Test FAILED: Found $FAILURES errors out of $TOTAL_REQUESTS requests."
-          [cite_start]echo "##[error] El pipeline falla ya que se encontraron errores (no 200s) en las respuestas. [cite: 156]"
+          echo "##[error] El pipeline falla ya que se encontraron errores (no 200s) en las respuestas."
           exit 1
         else
           echo "✅ Performance Test PASSED: All $TOTAL_REQUESTS requests were successful (HTTP 200 assertion passed)."
         fi
       displayName: '✅ Validate Performance Results'
-      # El pipeline fallará si hay una proporción significativa de errores [cite: 30]
