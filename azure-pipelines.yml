@@ -103,8 +103,9 @@ stages:
         organization: '$(sonarCloudOrganization)'
         scannerMode: 'CLI'
         configMode: 'manual'
-        projectKey: '$(sonarCloudProjectKey)'
-        projectName: 'BarberMatch Backend API'
+        cliProjectKey: '$(sonarCloudProjectKey)'
+        cliProjectName: 'BarberMatch Backend API'
+        cliSources: 'src'
         extraProperties: |
           sonar.javascript.lcov.reportPaths=coverage/lcov.info
           sonar.exclusions=**/*.spec.ts, **/*.test.ts, **/node_modules/**, **/dist/**
