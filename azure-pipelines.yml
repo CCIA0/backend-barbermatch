@@ -162,34 +162,101 @@ stages:
           
           # Create Azure Web App if it doesn't exist
           - task: AzureCLI@2
-            displayName: '🏗️ Create Azure Web App if not exists'
+            displayName: '🏗️ Create Azure Web App with multi-region fallback'
             inputs:
               azureSubscription: '$(azureSubscription)'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                # Check if resource group exists, create if not
-                if ! az group show --name $(resourceGroupName) --output none 2>/dev/null; then
-                  echo "Creating resource group $(resourceGroupName)..."
-                  az group create --name $(resourceGroupName) --location "East US"
-                fi
+                set -euo pipefail
                 
-                # Check if app service plan exists, create if not
-                PLAN_NAME="$(resourceGroupName)-plan"
-                if ! az appservice plan show --name $PLAN_NAME --resource-group $(resourceGroupName) --output none 2>/dev/null; then
-                  echo "Creating App Service Plan $PLAN_NAME..."
-                  az appservice plan create --name $PLAN_NAME --resource-group $(resourceGroupName) --sku F1 --is-linux
-                fi
+                # --- CONFIGURACIÓN BASADA EN EL SCRIPT DEL PROFESOR ---
+                RG_NAME="$(resourceGroupName)"
+                PLAN_BASE_NAME="$(resourceGroupName)-plan"
+                WEBAPP_NAME="$(webAppName)"
+                RUNTIME="NODE|$(nodeVersion)"
+                SKU_LEVEL="F1"  # Free tier para CI/CD
+                LOCATION_LIST=("brazilsouth" "eastus" "westeurope" "canadacentral" "southcentralus" "westus3" "eastus2" "westus2" "centralus" "northeurope")
                 
-                # Check if web app exists, create if not
-                if ! az webapp show --name $(webAppName) --resource-group $(resourceGroupName) --output none 2>/dev/null; then
-                  echo "Creating Web App $(webAppName)..."
-                  az webapp create --name $(webAppName) --resource-group $(resourceGroupName) --plan $PLAN_NAME --runtime "NODE|$(nodeVersion)"
-                  
-                  # Configure startup command
-                  az webapp config set --name $(webAppName) --resource-group $(resourceGroupName) --startup-file "npm run start:prod"
+                echo "Checking Microsoft.Web provider registration..."
+                reg_state=$(az provider show --namespace Microsoft.Web --query registrationState -o tsv 2>/dev/null || echo "NotRegistered")
+                echo "Current registration state: $reg_state"
+                if [ "$reg_state" != "Registered" ]; then
+                  echo "Attempting to register Microsoft.Web provider..."
+                  az provider register --namespace Microsoft.Web || true
+                  sleep 30  # Wait a bit for registration to process
+                fi
+
+                # 1. Crear el Grupo de Recursos (si ya existe, el CLI lo ignorará)
+                echo "Creando o verificando Grupo de Recursos: $RG_NAME"
+                az group create --name "$RG_NAME" --location eastus || true
+
+                # 2. Inicializar la variable de éxito
+                SUCCESS=false
+
+                # 3. Verificar si la Web App ya existe
+                if az webapp show --name "$WEBAPP_NAME" --resource-group "$RG_NAME" --output none 2>/dev/null; then
+                  echo "✅ Web App $WEBAPP_NAME ya existe. Saltando creación."
+                  SUCCESS=true
                 else
-                  echo "Web App $(webAppName) already exists"
+                  # 4. Iniciar el bucle para intentar en diferentes regiones
+                  for LOCATION in "${LOCATION_LIST[@]}"
+                  do
+                    PLAN_NAME="${PLAN_BASE_NAME}-${LOCATION}"
+                    echo -e "\n--- Intentando crear plan de servicio en la región: $LOCATION ---"
+
+                    # Verificar si el plan ya existe en esta región
+                    if az appservice plan show --name "$PLAN_NAME" --resource-group "$RG_NAME" --output none 2>/dev/null; then
+                      echo "Plan $PLAN_NAME ya existe en $LOCATION. Intentando crear Web App..."
+                    else
+                      # Intento de creación del App Service Plan (ASP)
+                      if az appservice plan create \
+                        --name "$PLAN_NAME" \
+                        --resource-group "$RG_NAME" \
+                        --location "$LOCATION" \
+                        --sku "$SKU_LEVEL" \
+                        --is-linux &> /dev/null; then
+                        
+                        echo -e "✅ Éxito: Plan de servicio creado en $LOCATION (Nombre: $PLAN_NAME)."
+                      else
+                        echo "❌ Fallo: La creación del Plan de App Service fue denegada en $LOCATION. Intentando la siguiente región."
+                        continue
+                      fi
+                    fi
+
+                    # 5. Crear la Web App en la región exitosa
+                    echo "Creando Web App $WEBAPP_NAME en $LOCATION..."
+                    if az webapp create \
+                      --name "$WEBAPP_NAME" \
+                      --resource-group "$RG_NAME" \
+                      --plan "$PLAN_NAME" \
+                      --runtime "$RUNTIME" &> /dev/null; then
+                      
+                      echo -e "🎉 Éxito: Web App creada y desplegada correctamente en $LOCATION."
+                      
+                      # Configure startup command
+                      az webapp config set --name "$WEBAPP_NAME" --resource-group "$RG_NAME" --startup-file "npm run start:prod" &> /dev/null || true
+                      
+                      SUCCESS=true
+                      break # Rompe el bucle si ambos recursos se crearon con éxito
+                    else
+                      echo "❌ Fallo: El Plan fue creado, pero la Web App falló. Intentando la siguiente región."
+                      # Opcional: Eliminar el plan que se creó para limpiar
+                      az appservice plan delete --name "$PLAN_NAME" --resource-group "$RG_NAME" --yes &> /dev/null || true
+                    fi
+                  done
+                fi
+
+                # 6. Mensaje de resultado final
+                if [ "$SUCCESS" = true ]; then
+                  echo -e "\n--- DESPLIEGUE COMPLETO ---"
+                  echo "URL: https://$WEBAPP_NAME.azurewebsites.net"
+                  echo "Web App creada exitosamente."
+                else
+                  echo -e "\n--- ERROR CRÍTICO ---"
+                  echo "No se pudo crear el App Service Plan en ninguna de las regiones intentadas."
+                  echo "Verifica que la restricción de política ('sys:regionrestriction') fue eliminada del Portal de Azure."
+                  exit 1
                 fi
               
           - task: AzureWebApp@1
